@@ -1,13 +1,9 @@
-// Player Results — live and previous Thai 2D results, pulled from
-// api.thaistock2d.com (free, no key). Fetches are revalidated so the page
-// stays fast and the upstream API is not hammered.
+// Player Results — live + previous Thai 2D results (api.thaistock2d.com),
+// shown as a card per draw: Set / Value / 2D.
 
-type LiveResp = {
-  live?: { twod?: string; date?: string; time?: string };
-  result?: { open_time?: string; twod?: string }[];
-  holiday?: { status?: string; name?: string };
-};
-type HistoryResp = { date?: string; child?: { time?: string; twod?: string }[] }[];
+type Draw = { time?: string; set?: string; value?: string; twod?: string };
+type HistoryResp = { date?: string; child?: Draw[] }[];
+type LiveResp = { server_time?: string };
 
 const UA = 'guessing-game/1.0';
 
@@ -24,81 +20,87 @@ async function getJson<T>(url: string, revalidate: number): Promise<T | null> {
   }
 }
 
+// "11:00:00" -> "11:00 AM"
+function to12h(t: string): string {
+  const [hStr, m = '00'] = t.split(':');
+  const h = Number(hStr) || 0;
+  const ampm = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 || 12;
+  return `${String(h12).padStart(2, '0')}:${m} ${ampm}`;
+}
+
+const clean = (s?: string) => (s ?? '').replace(/,/g, '') || '--';
+
+function Cell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="text-center">
+      <p className="text-xs text-white/60">{label}</p>
+      <p className="font-bold text-white">{value}</p>
+    </div>
+  );
+}
+
 export default async function ResultsPage() {
   const [live, history] = await Promise.all([
     getJson<LiveResp>('https://api.thaistock2d.com/live', 60),
     getJson<HistoryResp>('https://api.thaistock2d.com/2d_result', 300),
   ]);
 
-  const liveNumber =
-    live?.live?.twod && live.live.twod !== '--' ? live.live.twod : null;
-  const todayDraws = (live?.result ?? []).map((r) => ({
-    time: (r.open_time ?? '').slice(0, 5),
-    twod: r.twod ?? '--',
-  }));
-  const holidayName =
-    live?.holiday?.status && live.holiday.status !== '1' ? live.holiday.name : null;
-  const days = (history ?? []).map((d) => ({
+  const days = (history ?? []).slice(0, 12).map((d) => ({
     date: d.date ?? '',
-    draws: (d.child ?? []).map((c) => ({
-      time: (c.time ?? '').slice(0, 5),
-      twod: c.twod ?? '--',
-    })),
+    draws: d.child ?? [],
   }));
+
+  const updated =
+    live?.server_time ??
+    (days[0]
+      ? `${days[0].date} ${days[0].draws[days[0].draws.length - 1]?.time ?? ''}`
+      : '');
 
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-lg font-bold">Results</h1>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold text-gray-500">
-          Live{live?.live?.date ? ` · ${live.live.date}` : ''}
-        </h2>
-        {liveNumber ? (
-          <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 text-center">
-            <p className="text-xs text-gray-500">Live 2D</p>
-            <p className="text-4xl font-bold tracking-widest text-accent">{liveNumber}</p>
-          </div>
-        ) : (
-          <p className="rounded-md bg-gray-50 p-3 text-sm text-gray-500">
-            {holidayName ? `Market closed — ${holidayName}.` : 'Market closed.'} Latest
-            completed draws below.
-          </p>
-        )}
-        {todayDraws.length > 0 && (
-          <div className="grid grid-cols-2 gap-2">
-            {todayDraws.map((d) => (
-              <div key={d.time} className="rounded-lg border border-gray-200 p-3 text-center">
-                <p className="text-xs text-gray-500">{d.time}</p>
-                <p className="text-2xl font-bold tracking-widest text-accent">{d.twod}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {updated && (
+        <p className="text-center text-sm text-gray-500">
+          <span className="text-green-600">✓</span> Updated: {updated}
+        </p>
+      )}
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold text-gray-500">Previous Results</h2>
-        {days.length === 0 ? (
-          <p className="rounded-md bg-gray-50 p-3 text-sm text-gray-500">
-            Results are temporarily unavailable.
-          </p>
-        ) : (
-          days.map((day) => (
-            <div key={day.date} className="rounded-lg border border-gray-200 p-3">
-              <p className="mb-2 text-sm font-medium">{day.date}</p>
-              <div className="grid grid-cols-4 gap-1">
-                {day.draws.map((d) => (
-                  <div key={d.time} className="text-center">
-                    <p className="text-[10px] text-gray-400">{d.time}</p>
-                    <p className="text-lg font-bold tracking-wide text-gray-800">{d.twod}</p>
+      {days.length === 0 && (
+        <p className="rounded-md bg-gray-50 p-4 text-sm text-gray-500">
+          Results are temporarily unavailable.
+        </p>
+      )}
+
+      {days.map((day, di) => (
+        <section key={day.date || di} className="flex flex-col gap-2">
+          {di > 0 && (
+            <h2 className="text-sm font-semibold text-gray-500">{day.date}</h2>
+          )}
+          {day.draws.map((d, i) => (
+            <div
+              key={d.time || i}
+              className={`rounded-2xl px-4 py-3 ${i % 2 === 0 ? 'bg-blue-500' : 'bg-blue-700'}`}
+            >
+              <p className="text-center text-lg font-bold text-white">
+                {to12h(d.time ?? '')}
+              </p>
+              <div className="mt-1 grid grid-cols-3 gap-2 border-t border-white/25 pt-2">
+                <Cell label="Set" value={clean(d.set)} />
+                <Cell label="Value" value={clean(d.value)} />
+                <div className="flex items-center justify-center gap-1">
+                  <div className="text-center">
+                    <p className="text-xs text-white/60">2D</p>
+                    <p className="text-lg font-bold text-yellow-300">{d.twod ?? '--'}</p>
                   </div>
-                ))}
+                  <span className="text-white/50">›</span>
+                </div>
               </div>
             </div>
-          ))
-        )}
-      </section>
+          ))}
+        </section>
+      ))}
     </div>
   );
 }
