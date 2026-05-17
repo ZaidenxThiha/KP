@@ -14,9 +14,13 @@ type DistRow = {
 export default async function AdminDistributionPage() {
   const { data: officers } = await createClient()
     .from('profiles')
-    .select('id, username')
+    .select('id, username, points_balance')
     .eq('role', 'officer')
     .order('username', { ascending: true });
+
+  const balanceById = new Map(
+    (officers ?? []).map((o) => [o.id as string, Number(o.points_balance ?? 0)]),
+  );
 
   const { data: distData } = await createServiceClient()
     .from('v_officer_distribution')
@@ -31,6 +35,7 @@ export default async function AdminDistributionPage() {
         <thead className="bg-gray-50 text-left text-gray-500">
           <tr>
             <th className="p-3">Officer</th>
+            <th className="p-3">Balance</th>
             <th className="p-3">Given today</th>
             <th className="p-3">Given total</th>
           </tr>
@@ -39,6 +44,7 @@ export default async function AdminDistributionPage() {
           {dist.map((d) => (
             <tr key={d.officer_id}>
               <td className="p-3 font-medium">{d.username}</td>
+              <td className="p-3">{balanceById.get(d.officer_id)?.toLocaleString() ?? '0'}</td>
               <td className="p-3">{Number(d.given_today).toLocaleString()}</td>
               <td className="p-3">{Number(d.given_total).toLocaleString()}</td>
             </tr>

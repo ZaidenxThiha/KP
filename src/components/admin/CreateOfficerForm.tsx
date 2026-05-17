@@ -35,17 +35,22 @@ export function CreateOfficerForm() {
     <form onSubmit={submit} className="flex max-w-md flex-col gap-3 rounded-lg border border-gray-200 p-4">
       <h2 className="font-semibold">Create Officer</h2>
       <input
-        placeholder="Username"
+        placeholder="Username (min 3 chars)"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         required
+        minLength={3}
+        maxLength={40}
         className="rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
       <input
+        type="password"
         placeholder="Password (min 8 chars)"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
+        minLength={8}
+        maxLength={72}
         className="rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
       <button
