@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   let nameById = new Map<string, string>();
   if (winnerRows.length) {
-    const ids = [...new Set(winnerRows.map((g) => g.user_id))];
+    const ids = Array.from(new Set(winnerRows.map((g) => g.user_id)));
     const { data: profs } = await svc.from('profiles').select('id, username').in('id', ids);
     nameById = new Map((profs ?? []).map((p) => [p.id, p.username]));
   }
