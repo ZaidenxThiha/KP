@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Round = {
   id: string;
@@ -14,6 +14,7 @@ type Round = {
 
 function GuessForm() {
   const params = useSearchParams();
+  const router = useRouter();
   const [rounds, setRounds] = useState<Round[]>([]);
   const [roundId, setRoundId] = useState('');
   const [guessNumber, setGuessNumber] = useState('');
@@ -56,6 +57,7 @@ function GuessForm() {
       });
       setGuessNumber('');
       setPoints('');
+      router.refresh(); // re-render server components so the header balance updates
     } else {
       const remaining = data.error?.details?.remaining_max;
       setMessage({
