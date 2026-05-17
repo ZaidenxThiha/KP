@@ -16,8 +16,6 @@ type Settings = {
 const TOGGLES: { key: keyof Settings; label: string }[] = [
   { key: 'free_mode_enabled', label: 'Free mode enabled' },
   { key: 'new_player_bonus_enabled', label: 'New player bonus enabled' },
-  { key: 'auto_settle_enabled', label: 'Auto-settle enabled' },
-  { key: 'admin_approval_required', label: 'Admin approval required' },
 ];
 
 export function SettingsForm({ initial }: { initial: Settings }) {
@@ -56,6 +54,25 @@ export function SettingsForm({ initial }: { initial: Settings }) {
           />
         </label>
       ))}
+      <div className="flex flex-col gap-1">
+        <label className="flex items-center justify-between text-sm">
+          Auto-approve winners
+          <input
+            type="checkbox"
+            checked={settings.auto_settle_enabled && !settings.admin_approval_required}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                auto_settle_enabled: e.target.checked,
+                admin_approval_required: !e.target.checked,
+              })
+            }
+          />
+        </label>
+        <p className="text-xs text-gray-500">
+          On: winners are paid automatically once results post. Off: you approve each round.
+        </p>
+      </div>
       <label className="flex items-center justify-between text-sm">
         New player bonus amount
         <input
