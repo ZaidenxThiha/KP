@@ -1,7 +1,19 @@
 import { createClient } from '@/lib/supabase/server';
 import { WinningRateForm } from '@/components/admin/WinningRateForm';
+import { DataTable } from '@/components/DataTable';
 
 export const dynamic = 'force-dynamic';
+
+type Rate = {
+  id: string;
+  game_type: string;
+  market: string;
+  round_name: string;
+  winning_rate: number;
+  payout_mode: string;
+  active: boolean;
+  created_at: string;
+};
 
 export default async function AdminWinningRatesPage() {
   const { data: rates } = await createClient()
@@ -11,31 +23,26 @@ export default async function AdminWinningRatesPage() {
     .limit(50);
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-bold">Winning Rates</h1>
+    <div className="flex flex-col gap-5">
+      <h1 className="text-lg font-semibold text-gray-900">Winning Rates</h1>
       <WinningRateForm />
-      <table className="w-full overflow-hidden rounded-lg border border-gray-200 text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
-          <tr>
-            <th className="p-3">Game</th>
-            <th className="p-3">Rate</th>
-            <th className="p-3">Mode</th>
-            <th className="p-3">Active</th>
-            <th className="p-3">Changed</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {(rates ?? []).map((r) => (
-            <tr key={r.id} className={r.active ? 'font-medium' : 'text-gray-400'}>
-              <td className="p-3 uppercase">{r.game_type}</td>
-              <td className="p-3">{r.winning_rate}×</td>
-              <td className="p-3">{r.payout_mode}</td>
-              <td className="p-3">{r.active ? 'yes' : '—'}</td>
-              <td className="p-3">{new Date(r.created_at).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable<Rate>
+        rows={(rates ?? []) as Rate[]}
+        rowKey={(r) => r.id}
+        rowClassName={(r) => (r.active ? '' : 'text-gray-400')}
+        empty="No winning rates set."
+        columns={[
+          { header: 'Game', cell: (r) => <span className="font-medium uppercase">{r.game_type}</span> },
+          { header: 'Rate', cell: (r) => `${r.winning_rate}×` },
+          { header: 'Mode', cell: (r) => r.payout_mode },
+          { header: 'Active', cell: (r) => (r.active ? 'Yes' : '—') },
+          {
+            header: 'Changed',
+            align: 'right',
+            cell: (r) => new Date(r.created_at).toLocaleString(),
+          },
+        ]}
+      />
     </div>
   );
 }

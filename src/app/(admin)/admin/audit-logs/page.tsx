@@ -1,6 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
+import { DataTable } from '@/components/DataTable';
 
 export const dynamic = 'force-dynamic';
+
+type Log = {
+  id: string;
+  actor_role: string | null;
+  action_type: string;
+  target_table: string | null;
+  note: string | null;
+  created_at: string;
+};
 
 export default async function AdminAuditLogsPage() {
   const { data: logs } = await createClient()
@@ -10,37 +20,23 @@ export default async function AdminAuditLogsPage() {
     .limit(100);
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-bold">Audit Logs</h1>
-      <table className="w-full overflow-hidden rounded-lg border border-gray-200 text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
-          <tr>
-            <th className="p-2">When</th>
-            <th className="p-2">Actor</th>
-            <th className="p-2">Action</th>
-            <th className="p-2">Table</th>
-            <th className="p-2">Note</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {(logs ?? []).map((l) => (
-            <tr key={l.id}>
-              <td className="p-2">{new Date(l.created_at).toLocaleString()}</td>
-              <td className="p-2">{l.actor_role ?? '—'}</td>
-              <td className="p-2 font-medium">{l.action_type}</td>
-              <td className="p-2">{l.target_table ?? '—'}</td>
-              <td className="p-2 text-gray-500">{l.note ?? ''}</td>
-            </tr>
-          ))}
-          {(logs ?? []).length === 0 && (
-            <tr>
-              <td colSpan={5} className="p-4 text-center text-gray-500">
-                No audit entries yet.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+    <div className="flex flex-col gap-5">
+      <h1 className="text-lg font-semibold text-gray-900">Audit Logs</h1>
+      <DataTable<Log>
+        rows={(logs ?? []) as Log[]}
+        rowKey={(l) => l.id}
+        empty="No audit entries yet."
+        columns={[
+          { header: 'When', cell: (l) => new Date(l.created_at).toLocaleString() },
+          { header: 'Actor', cell: (l) => <span className="capitalize">{l.actor_role ?? '—'}</span> },
+          {
+            header: 'Action',
+            cell: (l) => <span className="font-medium text-gray-900">{l.action_type}</span>,
+          },
+          { header: 'Table', cell: (l) => l.target_table ?? '—' },
+          { header: 'Note', cell: (l) => <span className="text-gray-500">{l.note ?? '—'}</span> },
+        ]}
+      />
     </div>
   );
 }

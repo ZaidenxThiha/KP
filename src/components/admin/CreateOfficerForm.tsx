@@ -3,6 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const INPUT =
+  'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30';
+const BTN =
+  'rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition hover:bg-accent/90 disabled:opacity-50';
+
 export function CreateOfficerForm() {
   const router = useRouter();
   const [username, setUsername] = useState('');
@@ -32,8 +37,11 @@ export function CreateOfficerForm() {
   }
 
   return (
-    <form onSubmit={submit} className="flex max-w-md flex-col gap-3 rounded-lg border border-gray-200 p-4">
-      <h2 className="font-semibold">Create Officer</h2>
+    <form
+      onSubmit={submit}
+      className="flex w-full max-w-md flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4"
+    >
+      <h2 className="text-sm font-semibold text-gray-900">Create officer</h2>
       <input
         placeholder="Username (min 3 chars)"
         value={username}
@@ -41,7 +49,7 @@ export function CreateOfficerForm() {
         required
         minLength={3}
         maxLength={40}
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        className={INPUT}
       />
       <input
         type="password"
@@ -51,13 +59,9 @@ export function CreateOfficerForm() {
         required
         minLength={8}
         maxLength={72}
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        className={INPUT}
       />
-      <button
-        type="submit"
-        disabled={busy}
-        className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg disabled:opacity-60"
-      >
+      <button type="submit" disabled={busy} className={BTN}>
         {busy ? 'Creating…' : 'Create officer'}
       </button>
       {message && (

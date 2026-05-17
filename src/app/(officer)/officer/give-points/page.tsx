@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 
 type Player = { id: string; username: string; points_balance: number; status: string };
 
+const INPUT =
+  'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30';
+
 export default function PlayerPointsPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [playerId, setPlayerId] = useState('');
@@ -48,17 +51,18 @@ export default function PlayerPointsPage() {
   }
 
   return (
-    <div className="flex max-w-md flex-col gap-4">
-      <h1 className="text-xl font-bold">Player Points</h1>
+    <div className="flex w-full max-w-md flex-col gap-4">
+      <h1 className="text-lg font-semibold text-gray-900">Player Points</h1>
 
-      <div className="flex gap-2">
+      {/* Give / Remove segmented control */}
+      <div className="flex gap-1 rounded-lg border border-gray-200 bg-gray-100 p-1">
         {(['give', 'remove'] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
-            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium capitalize ${
-              mode === m ? 'bg-accent text-accent-fg' : 'border border-gray-300 text-gray-600'
+            className={`flex-1 rounded-md px-4 py-1.5 text-sm font-medium capitalize transition ${
+              mode === m ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {m}
@@ -66,14 +70,13 @@ export default function PlayerPointsPage() {
         ))}
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-3">
-        <label className="text-sm font-medium">
+      <form
+        onSubmit={submit}
+        className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4"
+      >
+        <label className="text-xs font-medium text-gray-500">
           Player
-          <select
-            value={playerId}
-            onChange={(e) => setPlayerId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
-          >
+          <select value={playerId} onChange={(e) => setPlayerId(e.target.value)} className={INPUT}>
             {players.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.username} ({p.points_balance.toLocaleString()} pts)
@@ -81,36 +84,34 @@ export default function PlayerPointsPage() {
             ))}
           </select>
         </label>
-        <label className="text-sm font-medium">
+        <label className="text-xs font-medium text-gray-500">
           Amount
           <input
             inputMode="numeric"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             required
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+            className={INPUT}
           />
         </label>
-        <label className="text-sm font-medium">
+        <label className="text-xs font-medium text-gray-500">
           Note (optional)
-          <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
-          />
+          <input value={note} onChange={(e) => setNote(e.target.value)} className={INPUT} />
         </label>
         <button
           type="submit"
           disabled={busy || !playerId}
-          className="rounded-md bg-accent px-4 py-2.5 font-medium text-accent-fg disabled:opacity-60"
+          className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-fg transition hover:bg-accent/90 disabled:opacity-50"
         >
           {busy ? 'Working…' : mode === 'remove' ? 'Remove points' : 'Give points'}
         </button>
       </form>
       {message && (
         <p
-          className={`rounded-md p-3 text-sm ${
-            message.kind === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+          className={`rounded-lg border p-3 text-sm ${
+            message.kind === 'ok'
+              ? 'border-green-200 bg-green-50 text-green-700'
+              : 'border-red-200 bg-red-50 text-red-700'
           }`}
         >
           {message.text}

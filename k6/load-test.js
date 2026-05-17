@@ -24,6 +24,10 @@ const PLAYER_COUNT = Number(__ENV.PLAYER_COUNT || 300);
 
 const guessErrors = new Rate('guess_errors');
 
+// Per-VU cached session token — module scope is per-VU in k6, so each VU
+// signs in on its first iteration and reuses the token after (real sessions).
+let vuToken = null;
+
 export const options = {
   scenarios: {
     players: {
@@ -59,17 +63,21 @@ export function playerJourney() {
   const n = (__VU % PLAYER_COUNT) + 1;
   const username = 'P' + String(n).padStart(6, '0');
 
-  // 1. Sign in.
-  const login = http.post(
-    `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-    JSON.stringify({ email: `${username}@players.local`, password: 'player12345' }),
-    { headers: { apikey: ANON_KEY, 'Content-Type': 'application/json' } },
-  );
-  if (!check(login, { 'login ok': (r) => r.status === 200 })) {
-    sleep(1);
-    return;
+  // 1. Sign in once per VU, then reuse the session token — a real player
+  //    keeps one session and does not re-authenticate on every action.
+  if (!vuToken) {
+    const login = http.post(
+      `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      JSON.stringify({ email: `${username}@players.local`, password: 'player12345' }),
+      { headers: { apikey: ANON_KEY, 'Content-Type': 'application/json' } },
+    );
+    if (!check(login, { 'login ok': (r) => r.status === 200 })) {
+      sleep(2);
+      return;
+    }
+    vuToken = login.json('access_token');
   }
-  const token = login.json('access_token');
+  const token = vuToken;
 
   // 2. Read today's open rounds.
   const rounds = http.get(

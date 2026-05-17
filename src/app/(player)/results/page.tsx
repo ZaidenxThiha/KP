@@ -34,8 +34,8 @@ const clean = (s?: string) => (s ?? '').replace(/,/g, '') || '--';
 function Cell({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-center">
-      <p className="text-xs text-white/60">{label}</p>
-      <p className="font-bold text-white">{value}</p>
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className="font-semibold text-gray-700">{value}</p>
     </div>
   );
 }
@@ -53,48 +53,36 @@ export default async function ResultsPage() {
 
   const updated =
     live?.server_time ??
-    (days[0]
-      ? `${days[0].date} ${days[0].draws[days[0].draws.length - 1]?.time ?? ''}`
-      : '');
+    (days[0] ? `${days[0].date} ${days[0].draws[days[0].draws.length - 1]?.time ?? ''}` : '');
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-lg font-bold">Results</h1>
+      <h1 className="text-lg font-bold text-gray-900">Results</h1>
 
-      {updated && (
-        <p className="text-center text-sm text-gray-500">
-          <span className="text-green-600">✓</span> Updated: {updated}
-        </p>
-      )}
+      {updated && <p className="text-center text-xs text-gray-400">Updated: {updated}</p>}
 
       {days.length === 0 && (
-        <p className="rounded-md bg-gray-50 p-4 text-sm text-gray-500">
+        <p className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
           Results are temporarily unavailable.
         </p>
       )}
 
       {days.map((day, di) => (
         <section key={day.date || di} className="flex flex-col gap-2">
-          {di > 0 && (
-            <h2 className="text-sm font-semibold text-gray-500">{day.date}</h2>
-          )}
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            {di === 0 ? 'Latest' : day.date}
+          </h2>
           {day.draws.map((d, i) => (
-            <div
-              key={d.time || i}
-              className={`rounded-2xl px-4 py-3 ${i % 2 === 0 ? 'bg-blue-500' : 'bg-blue-700'}`}
-            >
-              <p className="text-center text-lg font-bold text-white">
+            <div key={d.time || i} className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <p className="text-center text-sm font-semibold text-gray-500">
                 {to12h(d.time ?? '')}
               </p>
-              <div className="mt-1 grid grid-cols-3 gap-2 border-t border-white/25 pt-2">
+              <div className="mt-2 grid grid-cols-3 gap-2 border-t border-gray-100 pt-2">
                 <Cell label="Set" value={clean(d.set)} />
                 <Cell label="Value" value={clean(d.value)} />
-                <div className="flex items-center justify-center gap-1">
-                  <div className="text-center">
-                    <p className="text-xs text-white/60">2D</p>
-                    <p className="text-lg font-bold text-yellow-300">{d.twod ?? '--'}</p>
-                  </div>
-                  <span className="text-white/50">›</span>
+                <div className="text-center">
+                  <p className="text-xs text-gray-400">2D</p>
+                  <p className="text-2xl font-bold text-accent">{d.twod ?? '--'}</p>
                 </div>
               </div>
             </div>

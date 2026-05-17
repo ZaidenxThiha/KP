@@ -1,7 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentProfile } from '@/lib/auth';
+import { DataTable } from '@/components/DataTable';
 
 export const dynamic = 'force-dynamic';
+
+type Player = {
+  id: string;
+  username: string;
+  points_balance: number;
+  status: string;
+  created_at: string;
+};
 
 export default async function OfficerPlayersPage() {
   const profile = await getCurrentProfile();
@@ -14,33 +23,24 @@ export default async function OfficerPlayersPage() {
     .order('created_at', { ascending: false });
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-bold">My Players</h1>
-      <table className="w-full overflow-hidden rounded-lg border border-gray-200 text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
-          <tr>
-            <th className="p-3">Username</th>
-            <th className="p-3">Balance</th>
-            <th className="p-3">Status</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {(players ?? []).map((p) => (
-            <tr key={p.id}>
-              <td className="p-3 font-medium">{p.username}</td>
-              <td className="p-3">{p.points_balance.toLocaleString()}</td>
-              <td className="p-3">{p.status}</td>
-            </tr>
-          ))}
-          {(players ?? []).length === 0 && (
-            <tr>
-              <td colSpan={3} className="p-4 text-center text-gray-500">
-                No players yet — create one to get started.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+    <div className="flex flex-col gap-5">
+      <h1 className="text-lg font-semibold text-gray-900">My Players</h1>
+      <DataTable<Player>
+        rows={(players ?? []) as Player[]}
+        rowKey={(p) => p.id}
+        empty="No players yet — create one to get started."
+        columns={[
+          {
+            header: 'Username',
+            cell: (p) => <span className="font-medium text-gray-900">{p.username}</span>,
+          },
+          { header: 'Balance', align: 'right', cell: (p) => p.points_balance.toLocaleString() },
+          {
+            header: 'Status',
+            cell: (p) => <span className="capitalize text-gray-500">{p.status}</span>,
+          },
+        ]}
+      />
     </div>
   );
 }

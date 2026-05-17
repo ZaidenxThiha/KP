@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { DataTable } from '@/components/DataTable';
 
 const REPORTS = [
   'dashboard',
@@ -10,9 +11,16 @@ const REPORTS = [
   'daily_pnl',
 ];
 
+const INPUT =
+  'rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30';
+const BTN_GHOST =
+  'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50';
+
+type Row = Record<string, unknown>;
+
 export function ReportsView() {
   const [report, setReport] = useState('dashboard');
-  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -29,68 +37,45 @@ export function ReportsView() {
 
   const cols = rows[0] ? Object.keys(rows[0]) : [];
 
+  // CSV download needs the Accept header, so fetch + blob rather than a link.
+  function downloadCsv() {
+    fetch(`/api/v1/admin/reports/${report}`, { headers: { Accept: 'text/csv' } })
+      .then((r) => r.blob())
+      .then((b) => {
+        const url = URL.createObjectURL(b);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${report}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <select
-          value={report}
-          onChange={(e) => setReport(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
+      <div className="flex flex-wrap items-center gap-3">
+        <select value={report} onChange={(e) => setReport(e.target.value)} className={INPUT}>
           {REPORTS.map((r) => (
             <option key={r} value={r}>
               {r}
             </option>
           ))}
         </select>
-        <a
-          href={`/api/v1/admin/reports/${report}`}
-          className="text-sm text-accent underline"
-          // CSV download requires the Accept header; fetch + blob keeps it simple.
-          onClick={(e) => {
-            e.preventDefault();
-            fetch(`/api/v1/admin/reports/${report}`, { headers: { Accept: 'text/csv' } })
-              .then((r) => r.blob())
-              .then((b) => {
-                const url = URL.createObjectURL(b);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${report}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-              });
-          }}
-        >
+        <button onClick={downloadCsv} className={BTN_GHOST}>
           Download CSV
-        </a>
+        </button>
       </div>
       {loading ? (
         <p className="text-sm text-gray-500">Loading…</p>
-      ) : rows.length === 0 ? (
-        <p className="text-sm text-gray-500">No data.</p>
       ) : (
-        <table className="w-full overflow-hidden rounded-lg border border-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
-            <tr>
-              {cols.map((c) => (
-                <th key={c} className="p-2">
-                  {c}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {rows.map((row, i) => (
-              <tr key={i}>
-                {cols.map((c) => (
-                  <td key={c} className="p-2">
-                    {String(row[c] ?? '')}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable<Row>
+          rows={rows}
+          empty="No data."
+          columns={cols.map((c) => ({
+            header: c,
+            cell: (row: Row) => String(row[c] ?? ''),
+          }))}
+        />
       )}
     </div>
   );

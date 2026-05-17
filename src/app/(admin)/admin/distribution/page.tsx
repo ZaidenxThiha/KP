@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { GrantPointsForm } from '@/components/admin/GrantPointsForm';
+import { DataTable } from '@/components/DataTable';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,29 +29,35 @@ export default async function AdminDistributionPage() {
   const dist = (distData ?? []) as DistRow[];
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-bold">Officer Distribution</h1>
+    <div className="flex flex-col gap-5">
+      <h1 className="text-lg font-semibold text-gray-900">Officer Distribution</h1>
       <GrantPointsForm officers={officers ?? []} />
-      <table className="w-full overflow-hidden rounded-lg border border-gray-200 text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
-          <tr>
-            <th className="p-3">Officer</th>
-            <th className="p-3">Balance</th>
-            <th className="p-3">Given today</th>
-            <th className="p-3">Given total</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {dist.map((d) => (
-            <tr key={d.officer_id}>
-              <td className="p-3 font-medium">{d.username}</td>
-              <td className="p-3">{balanceById.get(d.officer_id)?.toLocaleString() ?? '0'}</td>
-              <td className="p-3">{Number(d.given_today).toLocaleString()}</td>
-              <td className="p-3">{Number(d.given_total).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable<DistRow>
+        rows={dist}
+        rowKey={(d) => d.officer_id}
+        empty="No officers yet."
+        columns={[
+          {
+            header: 'Officer',
+            cell: (d) => <span className="font-medium text-gray-900">{d.username}</span>,
+          },
+          {
+            header: 'Balance',
+            align: 'right',
+            cell: (d) => (balanceById.get(d.officer_id) ?? 0).toLocaleString(),
+          },
+          {
+            header: 'Given today',
+            align: 'right',
+            cell: (d) => Number(d.given_today).toLocaleString(),
+          },
+          {
+            header: 'Given total',
+            align: 'right',
+            cell: (d) => Number(d.given_total).toLocaleString(),
+          },
+        ]}
+      />
     </div>
   );
 }

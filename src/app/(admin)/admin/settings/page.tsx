@@ -11,12 +11,16 @@ export default async function AdminSettingsPage() {
     .single();
 
   if (!settings) {
-    return <p className="text-sm text-red-600">Game settings row is missing.</p>;
+    return (
+      <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        Game settings row is missing.
+      </p>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-bold">Settings</h1>
+    <div className="flex flex-col gap-5">
+      <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
       <SettingsForm
         initial={{
           free_mode_enabled: settings.free_mode_enabled,

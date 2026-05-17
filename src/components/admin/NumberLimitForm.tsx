@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 
 const RULE_TYPES = ['exact', 'contains', 'first_digit', 'last_digit', 'range', 'list', 'all'];
 
+const INPUT =
+  'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:bg-gray-100 disabled:text-gray-400';
+const BTN =
+  'rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition hover:bg-accent/90 disabled:opacity-50';
+
 // Builds the rule_value jsonb for the chosen rule type from the free-text input.
 function buildRuleValue(ruleType: string, raw: string): Record<string, unknown> {
   const v = raw.trim();
@@ -71,49 +76,49 @@ export function NumberLimitForm() {
           : 'a single number or digit';
 
   return (
-    <form onSubmit={submit} className="flex max-w-md flex-col gap-3 rounded-lg border border-gray-200 p-4">
-      <h2 className="font-semibold">Create Number-Limit Rule</h2>
-      <div className="flex gap-3">
-        <select
-          value={gameType}
-          onChange={(e) => setGameType(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
+    <form
+      onSubmit={submit}
+      className="flex w-full max-w-md flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4"
+    >
+      <h2 className="text-sm font-semibold text-gray-900">Create number-limit rule</h2>
+      <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
+        Game
+        <select value={gameType} onChange={(e) => setGameType(e.target.value)} className={INPUT}>
           <option value="2d">2D</option>
           <option value="3d">3D</option>
         </select>
-        <select
-          value={ruleType}
-          onChange={(e) => setRuleType(e.target.value)}
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
+        Rule type
+        <select value={ruleType} onChange={(e) => setRuleType(e.target.value)} className={INPUT}>
           {RULE_TYPES.map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
           ))}
         </select>
-      </div>
-      <input
-        placeholder={hint}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        disabled={ruleType === 'all'}
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
-      />
-      <input
-        inputMode="numeric"
-        placeholder="Max points"
-        value={maxPoints}
-        onChange={(e) => setMaxPoints(e.target.value)}
-        required
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-      />
-      <button
-        type="submit"
-        disabled={busy}
-        className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg disabled:opacity-60"
-      >
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
+        Value
+        <input
+          placeholder={hint}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          disabled={ruleType === 'all'}
+          className={INPUT}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
+        Max points
+        <input
+          inputMode="numeric"
+          value={maxPoints}
+          onChange={(e) => setMaxPoints(e.target.value)}
+          required
+          className={INPUT}
+        />
+      </label>
+      <button type="submit" disabled={busy} className={BTN}>
         {busy ? 'Saving…' : 'Create rule'}
       </button>
       {message && (

@@ -1,7 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
 import { NumberLimitForm } from '@/components/admin/NumberLimitForm';
+import { DataTable } from '@/components/DataTable';
 
 export const dynamic = 'force-dynamic';
+
+type Rule = {
+  id: string;
+  game_type: string;
+  rule_type: string;
+  rule_value: unknown;
+  max_points: number;
+  active: boolean;
+  created_at: string;
+};
 
 export default async function AdminNumberLimitsPage() {
   const { data: rules } = await createClient()
@@ -11,31 +22,29 @@ export default async function AdminNumberLimitsPage() {
     .limit(100);
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-bold">Number Limits</h1>
+    <div className="flex flex-col gap-5">
+      <h1 className="text-lg font-semibold text-gray-900">Number Limits</h1>
       <NumberLimitForm />
-      <table className="w-full overflow-hidden rounded-lg border border-gray-200 text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
-          <tr>
-            <th className="p-3">Game</th>
-            <th className="p-3">Type</th>
-            <th className="p-3">Value</th>
-            <th className="p-3">Max points</th>
-            <th className="p-3">Active</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {(rules ?? []).map((r) => (
-            <tr key={r.id} className={r.active ? '' : 'text-gray-400'}>
-              <td className="p-3 uppercase">{r.game_type}</td>
-              <td className="p-3">{r.rule_type}</td>
-              <td className="p-3 font-mono text-xs">{JSON.stringify(r.rule_value)}</td>
-              <td className="p-3">{r.max_points.toLocaleString()}</td>
-              <td className="p-3">{r.active ? 'yes' : '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable<Rule>
+        rows={(rules ?? []) as Rule[]}
+        rowKey={(r) => r.id}
+        rowClassName={(r) => (r.active ? '' : 'text-gray-400')}
+        empty="No number-limit rules."
+        columns={[
+          { header: 'Game', cell: (r) => <span className="font-medium uppercase">{r.game_type}</span> },
+          { header: 'Type', cell: (r) => r.rule_type },
+          {
+            header: 'Value',
+            cell: (r) => (
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-600">
+                {JSON.stringify(r.rule_value)}
+              </code>
+            ),
+          },
+          { header: 'Max points', align: 'right', cell: (r) => r.max_points.toLocaleString() },
+          { header: 'Active', cell: (r) => (r.active ? 'Yes' : '—') },
+        ]}
+      />
     </div>
   );
 }

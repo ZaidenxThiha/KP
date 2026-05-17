@@ -3,11 +3,12 @@ import { getCurrentProfile } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+// Win / loss keep a soft green / red; every other status stays neutral gray.
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-gray-100 text-gray-600',
-  won: 'bg-green-100 text-green-700',
-  lost: 'bg-red-100 text-red-700',
-  refunded: 'bg-amber-100 text-amber-700',
+  won: 'bg-green-50 text-green-700',
+  lost: 'bg-red-50 text-red-600',
+  refunded: 'bg-gray-100 text-gray-600',
   cancelled: 'bg-gray-100 text-gray-500',
 };
 
@@ -23,31 +24,34 @@ export default async function HistoryPage() {
 
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="text-lg font-bold">My Guesses</h1>
+      <h1 className="text-lg font-bold text-gray-900">My Guesses</h1>
       {(guesses ?? []).length === 0 && (
-        <p className="rounded-md bg-gray-50 p-4 text-sm text-gray-500">No guesses yet.</p>
+        <p className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
+          No guesses yet.
+        </p>
       )}
       {(guesses ?? []).map((g) => (
         <div
           key={g.id}
-          className="flex items-center justify-between rounded-lg border border-gray-200 p-3"
+          className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3.5"
         >
           <div>
-            <p className="text-lg font-bold tracking-widest">{g.guess_number}</p>
-            <p className="text-xs text-gray-500">
-              {g.game_type.toUpperCase()} · {g.points_used.toLocaleString()} pts
+            <p className="text-xl font-bold tracking-widest text-gray-900">{g.guess_number}</p>
+            <p className="mt-0.5 text-xs text-gray-400">
+              {g.game_type.toUpperCase()} · {g.points_used.toLocaleString()} pts ·{' '}
+              {new Date(g.created_at).toLocaleDateString()}
             </p>
           </div>
-          <div className="text-right">
+          <div className="flex flex-col items-end gap-1">
             <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                STATUS_STYLE[g.status] ?? 'bg-gray-100'
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+                STATUS_STYLE[g.status] ?? 'bg-gray-100 text-gray-600'
               }`}
             >
               {g.status}
             </span>
             {g.status === 'won' && (
-              <p className="mt-1 text-sm font-semibold text-green-700">
+              <p className="text-sm font-semibold text-green-700">
                 +{g.possible_win_amount.toLocaleString()}
               </p>
             )}

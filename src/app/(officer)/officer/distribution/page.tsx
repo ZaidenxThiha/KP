@@ -1,7 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentProfile } from '@/lib/auth';
+import { DataTable } from '@/components/DataTable';
 
 export const dynamic = 'force-dynamic';
+
+type Txn = {
+  id: string;
+  amount: number;
+  to_user_id: string | null;
+  note: string | null;
+  created_at: string;
+};
 
 export default async function OfficerDistributionPage() {
   const profile = await getCurrentProfile();
@@ -15,39 +24,27 @@ export default async function OfficerDistributionPage() {
     .order('created_at', { ascending: false })
     .limit(100);
 
-  const total = (rows ?? []).reduce((s, r) => s + r.amount, 0);
+  const list = (rows ?? []) as Txn[];
+  const total = list.reduce((s, r) => s + r.amount, 0);
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-bold">Distribution History</h1>
-      <p className="text-sm text-gray-500">
-        Total given (last 100): {total.toLocaleString()} pts
-      </p>
-      <table className="w-full overflow-hidden rounded-lg border border-gray-200 text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
-          <tr>
-            <th className="p-3">When</th>
-            <th className="p-3">Amount</th>
-            <th className="p-3">Note</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {(rows ?? []).map((r) => (
-            <tr key={r.id}>
-              <td className="p-3">{new Date(r.created_at).toLocaleString()}</td>
-              <td className="p-3">{r.amount.toLocaleString()}</td>
-              <td className="p-3 text-gray-500">{r.note ?? '—'}</td>
-            </tr>
-          ))}
-          {(rows ?? []).length === 0 && (
-            <tr>
-              <td colSpan={3} className="p-4 text-center text-gray-500">
-                No distributions yet.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+    <div className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-lg font-semibold text-gray-900">Distribution History</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Total given (last 100): {total.toLocaleString()} pts
+        </p>
+      </div>
+      <DataTable<Txn>
+        rows={list}
+        rowKey={(r) => r.id}
+        empty="No distributions yet."
+        columns={[
+          { header: 'When', cell: (r) => new Date(r.created_at).toLocaleString() },
+          { header: 'Amount', align: 'right', cell: (r) => r.amount.toLocaleString() },
+          { header: 'Note', cell: (r) => <span className="text-gray-500">{r.note ?? '—'}</span> },
+        ]}
+      />
     </div>
   );
 }

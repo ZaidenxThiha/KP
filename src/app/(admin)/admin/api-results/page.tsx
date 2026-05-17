@@ -1,6 +1,26 @@
 import { createClient } from '@/lib/supabase/server';
+import { DataTable } from '@/components/DataTable';
 
 export const dynamic = 'force-dynamic';
+
+type SyncLog = {
+  id: string;
+  sync_type: string;
+  success: boolean;
+  response_status: number | null;
+  rows_affected: number | null;
+  error_message: string | null;
+  created_at: string;
+};
+
+type Draw = {
+  id: string;
+  game_type: string;
+  draw_date: string;
+  draw_name: string | null;
+  result_number: string | null;
+  status: string;
+};
 
 export default async function AdminApiResultsPage() {
   const supabase = createClient();
@@ -19,72 +39,64 @@ export default async function AdminApiResultsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-bold">API Results</h1>
+      <h1 className="text-lg font-semibold text-gray-900">API Results</h1>
 
-      <section>
-        <h2 className="mb-2 font-semibold">Recent sync runs</h2>
-        <table className="w-full overflow-hidden rounded-lg border border-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
-            <tr>
-              <th className="p-2">When</th>
-              <th className="p-2">Type</th>
-              <th className="p-2">OK</th>
-              <th className="p-2">Rows</th>
-              <th className="p-2">Error</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {(logs ?? []).map((l) => (
-              <tr key={l.id}>
-                <td className="p-2">{new Date(l.created_at).toLocaleString()}</td>
-                <td className="p-2">{l.sync_type}</td>
-                <td className="p-2">{l.success ? 'yes' : 'no'}</td>
-                <td className="p-2">{l.rows_affected ?? '—'}</td>
-                <td className="p-2 text-red-600">{l.error_message ?? ''}</td>
-              </tr>
-            ))}
-            {(logs ?? []).length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-500">
-                  No sync runs yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-semibold text-gray-900">Recent sync runs</h2>
+        <DataTable<SyncLog>
+          rows={(logs ?? []) as SyncLog[]}
+          rowKey={(l) => l.id}
+          empty="No sync runs yet."
+          columns={[
+            { header: 'When', cell: (l) => new Date(l.created_at).toLocaleString() },
+            { header: 'Type', cell: (l) => l.sync_type },
+            {
+              header: 'Result',
+              cell: (l) =>
+                l.success ? (
+                  <span className="text-gray-600">OK</span>
+                ) : (
+                  <span className="text-red-600">Failed</span>
+                ),
+            },
+            { header: 'Rows', align: 'right', cell: (l) => l.rows_affected ?? '—' },
+            {
+              header: 'Error',
+              cell: (l) =>
+                l.error_message ? (
+                  <span className="text-red-600">{l.error_message}</span>
+                ) : (
+                  '—'
+                ),
+            },
+          ]}
+        />
       </section>
 
-      <section>
-        <h2 className="mb-2 font-semibold">Cached draws</h2>
-        <table className="w-full overflow-hidden rounded-lg border border-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
-            <tr>
-              <th className="p-2">Date</th>
-              <th className="p-2">Game</th>
-              <th className="p-2">Name</th>
-              <th className="p-2">Result</th>
-              <th className="p-2">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {(draws ?? []).map((d) => (
-              <tr key={d.id}>
-                <td className="p-2">{d.draw_date}</td>
-                <td className="p-2 uppercase">{d.game_type}</td>
-                <td className="p-2">{d.draw_name ?? '—'}</td>
-                <td className="p-2">{d.result_number ?? '—'}</td>
-                <td className="p-2">{d.status}</td>
-              </tr>
-            ))}
-            {(draws ?? []).length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-500">
-                  No cached draws — run a calendar sync.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-semibold text-gray-900">Cached draws</h2>
+        <DataTable<Draw>
+          rows={(draws ?? []) as Draw[]}
+          rowKey={(d) => d.id}
+          empty="No cached draws — run a calendar sync."
+          columns={[
+            { header: 'Date', cell: (d) => d.draw_date },
+            { header: 'Game', cell: (d) => <span className="uppercase">{d.game_type}</span> },
+            { header: 'Name', cell: (d) => d.draw_name ?? '—' },
+            {
+              header: 'Result',
+              cell: (d) => (
+                <span className="font-medium tracking-widest text-gray-900">
+                  {d.result_number ?? '—'}
+                </span>
+              ),
+            },
+            {
+              header: 'Status',
+              cell: (d) => <span className="capitalize text-gray-500">{d.status}</span>,
+            },
+          ]}
+        />
       </section>
     </div>
   );
