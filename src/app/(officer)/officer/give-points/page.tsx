@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 
 type Player = { id: string; username: string; points_balance: number; status: string };
 
-export default function GivePointsPage() {
+export default function PlayerPointsPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [playerId, setPlayerId] = useState('');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+  const [mode, setMode] = useState<'give' | 'remove'>('give');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
@@ -26,7 +27,7 @@ export default function GivePointsPage() {
     e.preventDefault();
     setBusy(true);
     setMessage(null);
-    const res = await fetch('/api/v1/officer/points/give', {
+    const res = await fetch(`/api/v1/officer/points/${mode}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ player_id: playerId, amount: Number(amount), note: note || undefined }),
@@ -48,7 +49,23 @@ export default function GivePointsPage() {
 
   return (
     <div className="flex max-w-md flex-col gap-4">
-      <h1 className="text-xl font-bold">Give Points</h1>
+      <h1 className="text-xl font-bold">Player Points</h1>
+
+      <div className="flex gap-2">
+        {(['give', 'remove'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium capitalize ${
+              mode === m ? 'bg-accent text-accent-fg' : 'border border-gray-300 text-gray-600'
+            }`}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+
       <form onSubmit={submit} className="flex flex-col gap-3">
         <label className="text-sm font-medium">
           Player
@@ -87,7 +104,7 @@ export default function GivePointsPage() {
           disabled={busy || !playerId}
           className="rounded-md bg-accent px-4 py-2.5 font-medium text-accent-fg disabled:opacity-60"
         >
-          {busy ? 'Sending…' : 'Give points'}
+          {busy ? 'Working…' : mode === 'remove' ? 'Remove points' : 'Give points'}
         </button>
       </form>
       {message && (
