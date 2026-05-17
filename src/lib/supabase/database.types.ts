@@ -840,6 +840,7 @@ export type Database = {
         }[]
       }
       close_due_rounds: { Args: never; Returns: number }
+      create_daily_2d_rounds: { Args: { p_date?: string }; Returns: number }
       create_manual_round: {
         Args: {
           p_close_time: string
@@ -964,6 +965,10 @@ export type Database = {
         Returns: number
       }
       officer_give_points: {
+        Args: { p_amount: number; p_note?: string; p_player_id: string }
+        Returns: Json
+      }
+      officer_remove_points: {
         Args: { p_amount: number; p_note?: string; p_player_id: string }
         Returns: Json
       }
