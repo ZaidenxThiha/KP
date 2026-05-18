@@ -10,10 +10,10 @@ const config: Config = {
           DEFAULT: '#4f46e5',
           fg: '#ffffff',
         },
-        // Teal brand — player screens.
+        // Blue brand — player screens.
         brand: {
-          DEFAULT: '#0d6b5e',
-          dark: '#0a5347',
+          DEFAULT: '#1d4ed8',
+          dark: '#1e40af',
           fg: '#ffffff',
         },
       },

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentProfile } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/server';
 import { PlayerTabBar } from '@/components/PlayerTabBar';
 import { t } from '@/lib/strings';
 
@@ -29,9 +30,16 @@ export default async function PlayerLayout({ children }: { children: React.React
   if (!profile) redirect('/login');
   if (profile.role !== 'player') redirect(profile.role === 'admin' ? '/admin' : '/officer');
 
+  // Admin-configurable brand shown top-right on every player screen.
+  const { data: brand } = await createClient()
+    .from('game_settings')
+    .select('brand_name, brand_logo_url')
+    .eq('id', '00000000-0000-0000-0000-000000000001')
+    .single();
+
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-gray-50">
-      <header className="sticky top-0 z-20 flex items-center border-b border-gray-200 bg-white px-4 py-3">
+      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3">
         <div className="flex items-center gap-2.5">
           <span className="text-brand">
             <WalletIcon />
@@ -43,6 +51,17 @@ export default async function PlayerLayout({ children }: { children: React.React
               <span className="ml-0.5 text-sm font-medium">{t.kyat}</span>
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {brand?.brand_logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={brand.brand_logo_url}
+              alt=""
+              className="h-8 w-8 rounded-md object-contain"
+            />
+          ) : null}
+          <span className="text-base font-bold text-brand">{brand?.brand_name ?? '2D'}</span>
         </div>
       </header>
       <main className="flex-1 px-4 py-4 pb-32">{children}</main>

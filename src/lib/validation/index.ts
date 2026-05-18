@@ -97,6 +97,10 @@ export const gameSettingsBodySchema = z
     rapidapi_calendar_path: z.string(),
     rapidapi_calendar_fallback_path: z.string(),
     rapidapi_results_path: z.string(),
+    brand_name: z.string().max(60),
+    brand_logo_url: z.string().max(500),
+    help_title: z.string().max(160),
+    help_body: z.string().max(4000),
   })
   .partial();
 

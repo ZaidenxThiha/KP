@@ -30,6 +30,10 @@ export default async function AdminSettingsPage() {
           admin_approval_required: settings.admin_approval_required,
           api_result_mode: settings.api_result_mode,
           default_close_before_minutes: settings.default_close_before_minutes,
+          brand_name: settings.brand_name,
+          brand_logo_url: settings.brand_logo_url ?? '',
+          help_title: settings.help_title,
+          help_body: settings.help_body,
         }}
       />
     </div>

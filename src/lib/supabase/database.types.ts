@@ -149,6 +149,10 @@ export type Database = {
           admin_approval_required: boolean
           api_result_mode: string
           auto_settle_enabled: boolean
+          brand_logo_url: string | null
+          brand_name: string
+          help_body: string
+          help_title: string
           daily_claim_amount: number
           daily_claim_enabled: boolean
           default_close_before_minutes: number
@@ -165,6 +169,10 @@ export type Database = {
           admin_approval_required?: boolean
           api_result_mode?: string
           auto_settle_enabled?: boolean
+          brand_logo_url?: string | null
+          brand_name?: string
+          help_body?: string
+          help_title?: string
           daily_claim_amount?: number
           daily_claim_enabled?: boolean
           default_close_before_minutes?: number
@@ -181,6 +189,10 @@ export type Database = {
           admin_approval_required?: boolean
           api_result_mode?: string
           auto_settle_enabled?: boolean
+          brand_logo_url?: string | null
+          brand_name?: string
+          help_body?: string
+          help_title?: string
           daily_claim_amount?: number
           daily_claim_enabled?: boolean
           default_close_before_minutes?: number
@@ -1105,6 +1117,10 @@ export type Database = {
           admin_approval_required: boolean
           api_result_mode: string
           auto_settle_enabled: boolean
+          brand_logo_url: string | null
+          brand_name: string
+          help_body: string
+          help_title: string
           daily_claim_amount: number
           daily_claim_enabled: boolean
           default_close_before_minutes: number

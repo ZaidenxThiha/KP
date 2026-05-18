@@ -11,6 +11,10 @@ type Settings = {
   admin_approval_required: boolean;
   api_result_mode: string;
   default_close_before_minutes: number;
+  brand_name: string;
+  brand_logo_url: string;
+  help_title: string;
+  help_body: string;
 };
 
 const GAME_TOGGLES: { key: keyof Settings; label: string; hint: string }[] = [
@@ -134,6 +138,44 @@ export function SettingsForm({ initial }: { initial: Settings }) {
             setSettings({ ...settings, default_close_before_minutes: Number(e.target.value) })
           }
           className={INPUT}
+        />
+      </label>
+
+      <div className="border-t border-gray-100" />
+
+      <p className={SECTION}>Branding &amp; content</p>
+      <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
+        App name (player header)
+        <input
+          value={settings.brand_name}
+          onChange={(e) => setSettings({ ...settings, brand_name: e.target.value })}
+          className={INPUT}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
+        Logo image URL (player header)
+        <input
+          value={settings.brand_logo_url}
+          onChange={(e) => setSettings({ ...settings, brand_logo_url: e.target.value })}
+          placeholder="https://…"
+          className={INPUT}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
+        Help screen — title
+        <input
+          value={settings.help_title}
+          onChange={(e) => setSettings({ ...settings, help_title: e.target.value })}
+          className={INPUT}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
+        Help screen — text
+        <textarea
+          value={settings.help_body}
+          onChange={(e) => setSettings({ ...settings, help_body: e.target.value })}
+          rows={5}
+          className={`${INPUT} resize-y`}
         />
       </label>
 
