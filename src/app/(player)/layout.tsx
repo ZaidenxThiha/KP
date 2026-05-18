@@ -45,8 +45,8 @@ export default async function PlayerLayout({ children }: { children: React.React
             <WalletIcon />
           </span>
           <div className="leading-tight">
-            <p className="text-xs text-gray-400">{t.balance}</p>
-            <p className="text-base font-bold text-green-600">
+            <p className="text-xs text-brand">{t.balance}</p>
+            <p className="text-base font-bold text-brand">
               {profile.points_balance.toLocaleString()}
               <span className="ml-0.5 text-sm font-medium">{t.kyat}</span>
             </p>
