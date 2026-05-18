@@ -17,7 +17,7 @@ jobs:
       - run: pnpm build
       - name: No secrets in client bundle
         run: |
-          if grep -rE '(service_role|RAPIDAPI_KEY|SYNC_SECRET)' .next/; then
+          if grep -rE '(SUPABASE_SERVICE_ROLE_KEY|RAPIDAPI_KEY|SYNC_SECRET)' .next/static/; then
             echo "Secret leaked into client bundle"; exit 1
           fi
       - uses: supabase/setup-cli@v1

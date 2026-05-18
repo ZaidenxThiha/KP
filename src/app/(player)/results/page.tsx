@@ -1,26 +1,26 @@
-// Player Results — live + previous Thai 2D results (api.thaistock2d.com),
-// shown as a card per draw: Set / Value / 2D.
+'use client';
 
-type Draw = { time?: string; set?: string; value?: string; twod?: string };
-type HistoryResp = { date?: string; child?: Draw[] }[];
-type LiveResp = { server_time?: string };
+import { useEffect, useState } from 'react';
 
-const UA = 'guessing-game/1.0';
+// Live 2D results from api.thaistock2d.com (via our /api/v1/results/live proxy):
+// a big current 2D number on top, then a card per draw — polled every 15s.
 
-async function getJson<T>(url: string, revalidate: number): Promise<T | null> {
-  try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': UA, Accept: 'application/json' },
-      next: { revalidate },
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  }
-}
+type Draw = { open_time?: string; set?: string; value?: string; twod?: string };
+type Live = {
+  server_time?: string;
+  live?: { set?: string; value?: string; twod?: string; time?: string };
+  result?: Draw[];
+};
 
-// "11:00:00" -> "11:00 AM"
+// The four daily draws, labelled to match the game's round schedule.
+const TIME_LABEL: Record<string, string> = {
+  '11:00:00': '11:00 AM',
+  '12:00:00': '12:01 PM',
+  '15:00:00': '03:00 PM',
+  '16:30:00': '04:30 PM',
+};
+
+// "16:30:00" -> "04:30 PM" (fallback for any unexpected draw time)
 function to12h(t: string): string {
   const [hStr, m = '00'] = t.split(':');
   const h = Number(hStr) || 0;
@@ -29,66 +29,99 @@ function to12h(t: string): string {
   return `${String(h12).padStart(2, '0')}:${m} ${ampm}`;
 }
 
-const clean = (s?: string) => (s ?? '').replace(/,/g, '') || '--';
+export default function ResultsPage() {
+  const [data, setData] = useState<Live | null>(null);
+  const [failed, setFailed] = useState(false);
 
-function Cell({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="text-center">
-      <p className="text-xs text-gray-400">{label}</p>
-      <p className="font-semibold text-gray-700">{value}</p>
-    </div>
-  );
-}
+  useEffect(() => {
+    let alive = true;
+    async function poll() {
+      try {
+        const res = await fetch('/api/v1/results/live', { cache: 'no-store' });
+        if (!res.ok) {
+          if (alive) setFailed(true);
+          return;
+        }
+        const json = (await res.json()) as Live;
+        if (alive) {
+          setData(json);
+          setFailed(false);
+        }
+      } catch {
+        if (alive) setFailed(true);
+      }
+    }
+    poll();
+    const id = setInterval(poll, 15000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
 
-export default async function ResultsPage() {
-  const [live, history] = await Promise.all([
-    getJson<LiveResp>('https://api.thaistock2d.com/live', 60),
-    getJson<HistoryResp>('https://api.thaistock2d.com/2d_result', 300),
-  ]);
-
-  const days = (history ?? []).slice(0, 12).map((d) => ({
-    date: d.date ?? '',
-    draws: d.child ?? [],
-  }));
-
-  const updated =
-    live?.server_time ??
-    (days[0] ? `${days[0].date} ${days[0].draws[days[0].draws.length - 1]?.time ?? ''}` : '');
+  const live = data?.live;
+  const draws = data?.result ?? [];
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-lg font-bold text-gray-900">Results</h1>
+      {/* Big live 2D number */}
+      <div className="pt-1 text-center">
+        <p className="text-8xl font-black leading-none tracking-tight text-gray-900 drop-shadow-md">
+          {live?.twod ?? '--'}
+        </p>
+        <p className="mt-3 flex items-center justify-center gap-1.5 text-sm text-gray-500">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <path d="M21 3v5h-5" />
+          </svg>
+          Updated: {data?.server_time ?? '—'}
+        </p>
+      </div>
 
-      {updated && <p className="text-center text-xs text-gray-400">Updated: {updated}</p>}
-
-      {days.length === 0 && (
+      {!data && (
         <p className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
-          Results are temporarily unavailable.
+          {failed ? 'Results are temporarily unavailable.' : 'Loading live results…'}
         </p>
       )}
 
-      {days.map((day, di) => (
-        <section key={day.date || di} className="flex flex-col gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-            {di === 0 ? 'Latest' : day.date}
-          </h2>
-          {day.draws.map((d, i) => (
-            <div key={d.time || i} className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-              <p className="text-center text-sm font-semibold text-gray-500">
-                {to12h(d.time ?? '')}
-              </p>
-              <div className="mt-2 grid grid-cols-3 gap-2 border-t border-gray-100 pt-2">
-                <Cell label="Set" value={clean(d.set)} />
-                <Cell label="Value" value={clean(d.value)} />
+      <div className="flex flex-col gap-3">
+        {draws.map((d, i) => (
+          <div
+            key={d.open_time || i}
+            className={`rounded-2xl px-5 py-4 ${i % 2 === 0 ? 'bg-blue-500' : 'bg-blue-700'}`}
+          >
+            <p className="text-center text-lg font-bold text-white">
+              {TIME_LABEL[d.open_time ?? ''] ?? to12h(d.open_time ?? '')}
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-2 border-t border-white/25 pt-3">
+              <div className="text-center">
+                <p className="text-xs text-white/70">Set</p>
+                <p className="font-bold text-white">{d.set || '--'}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-white/70">Value</p>
+                <p className="font-bold text-white">{d.value || '--'}</p>
+              </div>
+              <div className="flex items-center justify-center gap-1.5">
                 <div className="text-center">
-                  <p className="text-xs text-gray-400">2D</p>
-                  <p className="text-2xl font-bold text-accent">{d.twod ?? '--'}</p>
+                  <p className="text-xs text-white/70">2D</p>
+                  <p className="text-xl font-bold text-yellow-300">{d.twod || '--'}</p>
                 </div>
+                <span className="text-white/50">›</span>
               </div>
             </div>
-          ))}
-        </section>
-      ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
