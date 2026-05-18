@@ -13,7 +13,7 @@ type Settings = {
   default_close_before_minutes: number;
 };
 
-const TOGGLES: { key: keyof Settings; label: string; hint: string }[] = [
+const GAME_TOGGLES: { key: keyof Settings; label: string; hint: string }[] = [
   { key: 'free_mode_enabled', label: 'Free mode', hint: 'Players can guess without spending points.' },
   {
     key: 'new_player_bonus_enabled',
@@ -27,6 +27,7 @@ const INPUT =
 const BTN =
   'rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition hover:bg-accent/90 disabled:opacity-50';
 const CHECKBOX = 'mt-0.5 h-4 w-4 shrink-0 accent-[#4f46e5]';
+const SECTION = 'text-xs font-medium uppercase tracking-wide text-gray-400';
 
 function ToggleRow({
   label,
@@ -81,7 +82,8 @@ export function SettingsForm({ initial }: { initial: Settings }) {
 
   return (
     <div className="flex w-full max-w-md flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4">
-      {TOGGLES.map((t) => (
+      <p className={SECTION}>Game</p>
+      {GAME_TOGGLES.map((t) => (
         <ToggleRow
           key={t.key}
           label={t.label}
@@ -90,21 +92,6 @@ export function SettingsForm({ initial }: { initial: Settings }) {
           onChange={(v) => setSettings({ ...settings, [t.key]: v })}
         />
       ))}
-      <ToggleRow
-        label="Auto-approve winners"
-        hint="On: winners are paid automatically once results post. Off: you approve each round."
-        checked={settings.auto_settle_enabled && !settings.admin_approval_required}
-        onChange={(v) =>
-          setSettings({
-            ...settings,
-            auto_settle_enabled: v,
-            admin_approval_required: !v,
-          })
-        }
-      />
-
-      <div className="border-t border-gray-100" />
-
       <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
         New-player bonus amount
         <input
@@ -116,6 +103,28 @@ export function SettingsForm({ initial }: { initial: Settings }) {
           className={INPUT}
         />
       </label>
+
+      <div className="border-t border-gray-100" />
+
+      <p className={SECTION}>Automation</p>
+      <ToggleRow
+        label="Auto-set results from API"
+        hint="On: each round's winning number is filled in automatically from the live results feed once it posts. Off: you enter every result by hand."
+        checked={settings.api_result_mode === 'api'}
+        onChange={(v) => setSettings({ ...settings, api_result_mode: v ? 'api' : 'manual' })}
+      />
+      <ToggleRow
+        label="Auto-approve & settle"
+        hint="On: rounds are settled and winners paid automatically once a result is in. Off: you press Approve & settle on each round."
+        checked={settings.auto_settle_enabled && !settings.admin_approval_required}
+        onChange={(v) =>
+          setSettings({
+            ...settings,
+            auto_settle_enabled: v,
+            admin_approval_required: !v,
+          })
+        }
+      />
       <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
         Close-before minutes
         <input
@@ -126,17 +135,6 @@ export function SettingsForm({ initial }: { initial: Settings }) {
           }
           className={INPUT}
         />
-      </label>
-      <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
-        API result mode
-        <select
-          value={settings.api_result_mode}
-          onChange={(e) => setSettings({ ...settings, api_result_mode: e.target.value })}
-          className={INPUT}
-        >
-          <option value="manual">Manual</option>
-          <option value="api">API</option>
-        </select>
       </label>
 
       <button onClick={save} disabled={busy} className={BTN}>
