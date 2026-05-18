@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { apiError, apiOk } from '@/lib/api';
+import { mmToday } from '@/lib/datetime';
 
 // GET /api/v1/results/today — rounds settled today, with their final result.
 export async function GET() {
   const supabase = createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = mmToday();
 
   const { data, error } = await supabase
     .from('rounds')

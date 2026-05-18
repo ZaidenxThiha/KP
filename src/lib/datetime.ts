@@ -50,3 +50,15 @@ export function mmTime(value: DateInput): string {
     hour12: true,
   });
 }
+
+// "2026-05-18" — the current calendar date in Myanmar time. Use this instead of
+// `new Date().toISOString().slice(0,10)`, which yields the UTC date and runs a
+// day behind during the Myanmar evening.
+export function mmToday(): string {
+  return new Date().toLocaleDateString('en-CA', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+}

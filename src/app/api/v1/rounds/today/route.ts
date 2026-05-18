@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { apiError, apiOk } from '@/lib/api';
+import { mmToday } from '@/lib/datetime';
 
 type RoundRow = {
   id: string;
@@ -18,15 +19,19 @@ type RateRow = {
   payout_mode: string;
 };
 
-// GET /api/v1/rounds/today — today's rounds with their current winning rates.
+// GET /api/v1/rounds/today — the currently relevant rounds (today's, plus any
+// still-active round dated for a future day) with their current winning rates.
 export async function GET() {
   const supabase = createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = mmToday();
 
+  // "Active" = still scheduled/open/closed (bettable now or awaiting a result),
+  // regardless of round_date, plus everything dated today for context. This is
+  // what lets players bet on tomorrow's rounds once today's have all closed.
   const { data: roundData, error } = await supabase
     .from('rounds')
     .select('id, game_type, market, round_name, round_date, close_time, status')
-    .eq('round_date', today)
+    .or(`round_date.gte.${today},status.in.(scheduled,open,closed)`)
     .order('close_time', { ascending: true });
   if (error) return apiError('internal_error', error.message);
   const rounds = (roundData ?? []) as RoundRow[];

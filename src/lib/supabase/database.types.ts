@@ -1033,6 +1033,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      round_number_availability: {
+        Args: { p_round_id: string }
+        Returns: {
+          guess_number: string
+          max_points: number
+          used: number
+        }[]
+      }
       run_auto_settlement: { Args: never; Returns: number }
       set_winning_rate: {
         Args: {

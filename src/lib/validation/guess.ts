@@ -41,3 +41,20 @@ export const placeGuessBodySchema = z.object({
 });
 
 export type PlaceGuessBody = z.infer<typeof placeGuessBodySchema>;
+
+// API body for POST /api/v1/guesses/batch — several numbers placed in one
+// request. Each item is placed by its own place_guess call server-side.
+export const batchGuessBodySchema = z.object({
+  round_id: z.string().uuid(),
+  items: z
+    .array(
+      z.object({
+        number: z.string().regex(/^[0-9]{2,3}$/, 'number must be 2 or 3 digits'),
+        points: positiveIntPoints,
+      }),
+    )
+    .min(1, 'at least one number is required')
+    .max(50, 'at most 50 numbers per request'),
+});
+
+export type BatchGuessBody = z.infer<typeof batchGuessBodySchema>;

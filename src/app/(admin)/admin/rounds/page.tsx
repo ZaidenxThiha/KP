@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { DataTable } from '@/components/DataTable';
+import { mmToday } from '@/lib/datetime';
 
 type Round = {
   id: string;
   game_type: string;
   round_name: string;
+  round_date: string;
   close_time: string;
   status: string;
 };
@@ -34,7 +36,7 @@ const BTN_PRIMARY =
 const BTN_GHOST =
   'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = mmToday;
 
 function Stat({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
   return (
@@ -84,7 +86,9 @@ export default function AdminRoundsPage() {
       setNote(
         data.created > 0
           ? `Created ${data.created} round${data.created === 1 ? '' : 's'} for ${data.round_date}.`
-          : `No rounds created for ${data.round_date} — they already exist, or it falls on a weekend.`,
+          : data.reason === 'weekend'
+            ? `${data.round_date} falls on a weekend — markets are closed, so no rounds were created.`
+            : `All four rounds for ${data.round_date} already exist — they show in the table below.`,
       );
       load();
     } else {
@@ -219,8 +223,12 @@ export default function AdminRoundsPage() {
       <DataTable<Round>
         rows={rounds}
         rowKey={(r) => r.id}
-        empty="No rounds today."
+        empty="No active rounds."
         columns={[
+          {
+            header: 'Date',
+            cell: (r) => <span className="whitespace-nowrap text-gray-500">{r.round_date}</span>,
+          },
           {
             header: 'Game',
             cell: (r) => <span className="font-medium uppercase text-gray-900">{r.game_type}</span>,

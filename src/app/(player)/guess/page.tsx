@@ -1,7 +1,13 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { errorText, t } from '@/lib/strings';
+import { mmDate, mmTime } from '@/lib/datetime';
+import { RoundPicker } from '@/components/player/RoundPicker';
+import { NumberGrid } from '@/components/player/NumberGrid';
+import { BetCart } from '@/components/player/BetCart';
+import { BoxModal, QuickPickModal } from '@/components/player/BetTypeModals';
 
 type Round = {
   id: string;
@@ -9,161 +15,354 @@ type Round = {
   round_name: string;
   close_time: string;
   status: string;
-  rate: { winning_rate: number; payout_mode: string } | null;
 };
+type Avail = Record<string, { used: number; max: number | null }>;
+type BatchResult = { number: string; ok: boolean };
 
-const INPUT =
-  'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30';
+const BTN_TYPE =
+  'rounded-lg border border-brand bg-white py-2 text-xs font-bold text-brand transition active:bg-brand active:text-brand-fg';
 
-function GuessForm() {
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1">
+      <span className={`h-2 w-2 rounded-full ${color}`} />
+      {label}
+    </span>
+  );
+}
+
+function GuessFlow() {
   const params = useSearchParams();
   const router = useRouter();
+
   const [rounds, setRounds] = useState<Round[]>([]);
   const [roundId, setRoundId] = useState('');
-  const [guessNumber, setGuessNumber] = useState('');
-  const [points, setPoints] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [pickerId, setPickerId] = useState('');
+  const [view, setView] = useState<'loading' | 'picker' | 'grid' | 'cart'>('loading');
+  const [amount, setAmount] = useState('100');
+  const [selection, setSelection] = useState<Record<string, number>>({});
+  const [availability, setAvailability] = useState<Avail>({});
+  const [balance, setBalance] = useState<number | null>(null);
+  const [threeD, setThreeD] = useState('');
+  const [boxOpen, setBoxOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const round = rounds.find((r) => r.id === roundId) ?? null;
 
   useEffect(() => {
+    fetch('/api/v1/player/balance')
+      .then((r) => r.json())
+      .then((d) => {
+        if (typeof d.balance === 'number') setBalance(d.balance);
+      })
+      .catch(() => {});
+
     fetch('/api/v1/rounds/today')
       .then((r) => r.json())
       .then((d) => {
         const open: Round[] = (d.rounds ?? []).filter((r: Round) => r.status === 'open');
         setRounds(open);
         const preset = params.get('round');
-        setRoundId(preset && open.some((r) => r.id === preset) ? preset : (open[0]?.id ?? ''));
+        if (preset && open.some((r) => r.id === preset)) {
+          setRoundId(preset);
+          setView('grid');
+        } else if (open.length === 1) {
+          setRoundId(open[0].id);
+          setView('grid');
+        } else {
+          setPickerId(open[0]?.id ?? '');
+          setView('picker');
+        }
       })
-      .catch(() => setMessage({ kind: 'err', text: 'Could not load rounds.' }));
+      .catch(() => {
+        setNotice(t.errors.loadRounds);
+        setView('picker');
+      });
   }, [params]);
 
-  const round = rounds.find((r) => r.id === roundId);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setMessage(null);
-    const res = await fetch('/api/v1/guesses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        round_id: roundId,
-        guess_number: guessNumber,
-        points_used: Number(points),
-      }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setMessage({
-        kind: 'ok',
-        text: `Guess placed. Possible win: ${data.possible_win_amount.toLocaleString()} pts. Balance: ${data.remaining_balance.toLocaleString()} pts.`,
-      });
-      setGuessNumber('');
-      setPoints('');
-      router.refresh(); // re-render server components so the header balance updates
-    } else {
-      const remaining = data.error?.details?.remaining_max;
-      setMessage({
-        kind: 'err',
-        text:
-          data.error?.code === 'partial_room'
-            ? `Only ${remaining} pts of room left on that number.`
-            : data.error?.code === 'number_full'
-              ? 'That number is full.'
-              : (data.error?.message ?? 'Could not place guess.'),
-      });
+  const loadAvailability = useCallback(async (rid: string) => {
+    try {
+      const res = await fetch(`/api/v1/rounds/availability?round_id=${rid}`);
+      const d = await res.json();
+      const map: Avail = {};
+      for (const n of d.numbers ?? []) map[n.number] = { used: n.used, max: n.max };
+      setAvailability(map);
+    } catch {
+      setNotice(t.errors.loadGrid);
     }
-    setBusy(false);
+  }, []);
+
+  useEffect(() => {
+    if (roundId && view === 'grid') loadAvailability(roundId);
+  }, [roundId, view, loadAvailability]);
+
+  const items = Object.keys(selection)
+    .sort()
+    .map((number) => ({ number, points: selection[number] }));
+  const count = items.length;
+
+  function toggleNumber(num: string) {
+    setNotice(null);
+    setSelection((prev) => {
+      if (prev[num] != null) {
+        const next = { ...prev };
+        delete next[num];
+        return next;
+      }
+      const amt = Math.floor(Number(amount));
+      if (!Number.isFinite(amt) || amt <= 0) {
+        setNotice(t.bet.amountFirst);
+        return prev;
+      }
+      return { ...prev, [num]: amt };
+    });
+  }
+
+  function addNumbers(nums: string[]) {
+    const amt = Math.floor(Number(amount));
+    if (!Number.isFinite(amt) || amt <= 0) {
+      setNotice(t.bet.amountFirst);
+      return;
+    }
+    setSelection((prev) => {
+      const next = { ...prev };
+      for (const n of nums) if (next[n] == null) next[n] = amt;
+      return next;
+    });
+    setNotice(null);
+  }
+
+  function addReverse() {
+    const keys = Object.keys(selection);
+    if (keys.length === 0) {
+      setNotice(t.bet.selectFirst);
+      return;
+    }
+    setSelection((prev) => {
+      const next = { ...prev };
+      for (const n of keys) {
+        const rev = n.split('').reverse().join('');
+        if (next[rev] == null) next[rev] = prev[n];
+      }
+      return next;
+    });
+    setNotice(t.bet.reverseDone);
+  }
+
+  function clearAll() {
+    setSelection({});
+    setNotice(null);
+  }
+
+  function confirmPicker() {
+    if (!pickerId) return;
+    setRoundId(pickerId);
+    setSelection({});
+    setNotice(null);
+    setView('grid');
+  }
+
+  function goToCart() {
+    if (count === 0) {
+      setNotice(t.bet.selectFirst);
+      return;
+    }
+    setNotice(null);
+    setView('cart');
+  }
+
+  async function placeBets() {
+    if (count === 0) return;
+    setPlacing(true);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/v1/guesses/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ round_id: roundId, items }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setNotice(errorText(d.error?.code));
+        setPlacing(false);
+        return;
+      }
+      const results = (d.results ?? []) as BatchResult[];
+      const failed = results.filter((r) => !r.ok).map((r) => r.number);
+      if (typeof d.remaining_balance === 'number') setBalance(d.remaining_balance);
+      router.refresh();
+      if (failed.length === 0) {
+        router.push('/history');
+        return;
+      }
+      setSelection((prev) => {
+        const next: Record<string, number> = {};
+        for (const n of failed) if (prev[n] != null) next[n] = prev[n];
+        return next;
+      });
+      setNotice(t.cart.someFailed);
+      setView('grid');
+      loadAvailability(roundId);
+    } catch {
+      setNotice(t.errors.generic);
+    }
+    setPlacing(false);
+  }
+
+  if (view === 'loading') {
+    return <p className="py-12 text-center text-sm text-gray-400">{t.loading}</p>;
+  }
+
+  if (view === 'picker') {
+    return (
+      <RoundPicker
+        rounds={rounds}
+        selectedId={pickerId}
+        onSelect={setPickerId}
+        onConfirm={confirmPicker}
+        onClose={() => router.push('/')}
+      />
+    );
+  }
+
+  if (view === 'cart') {
+    return (
+      <BetCart
+        items={items}
+        balance={balance}
+        placing={placing}
+        notice={notice}
+        onChangeAmount={(number, points) =>
+          setSelection((prev) => ({ ...prev, [number]: points }))
+        }
+        onRemove={(number) =>
+          setSelection((prev) => {
+            const next = { ...prev };
+            delete next[number];
+            return next;
+          })
+        }
+        onBack={() => {
+          setNotice(null);
+          setView('grid');
+        }}
+        onSubmit={placeBets}
+      />
+    );
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-lg font-bold text-gray-900">Place a Guess</h1>
-      {rounds.length === 0 ? (
-        <p className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
-          No open rounds right now.
-        </p>
-      ) : (
-        <form
-          onSubmit={submit}
-          className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4"
-        >
-          <label className="text-xs font-medium text-gray-500">
-            Round
-            <select value={roundId} onChange={(e) => setRoundId(e.target.value)} className={INPUT}>
-              {rounds.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.game_type.toUpperCase()} · {r.round_name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div>
-            <p className="text-xs font-medium text-gray-500">
-              Your number ({round?.game_type === '3d' ? '3 digits' : '2 digits'})
-            </p>
-            <input
-              inputMode="numeric"
-              value={guessNumber}
-              onChange={(e) => setGuessNumber(e.target.value)}
-              maxLength={3}
-              required
-              placeholder={round?.game_type === '3d' ? '000' : '00'}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-3 text-center text-3xl font-bold tracking-[0.3em] text-gray-900 outline-none transition placeholder:text-gray-300 focus:border-accent focus:ring-2 focus:ring-accent/30"
-            />
-          </div>
-
-          <label className="text-xs font-medium text-gray-500">
-            Points to stake
-            <input
-              inputMode="numeric"
-              value={points}
-              onChange={(e) => setPoints(e.target.value)}
-              required
-              className={INPUT}
-            />
-          </label>
-
-          {round?.rate && (
-            <div className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
-              <span className="text-gray-500">Rate {round.rate.winning_rate}×</span>
-              {Number(points) > 0 && (
-                <span className="font-semibold text-gray-900">
-                  Win {Math.round(Number(points) * round.rate.winning_rate).toLocaleString()} pts
-                </span>
-              )}
-            </div>
-          )}
-
+    <>
+      <div className="flex flex-col gap-3 pb-24">
+        <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2">
+          <p className="text-sm">
+            <span className="font-bold uppercase text-brand">{round?.round_name ?? '—'}</span>
+            {round && (
+              <span className="ml-2 text-xs text-gray-400">
+                {mmDate(round.close_time)} · {t.closeTime} {mmTime(round.close_time)}
+              </span>
+            )}
+          </p>
           <button
-            type="submit"
-            disabled={busy || !roundId}
-            className="rounded-lg bg-accent px-4 py-3 text-sm font-medium text-accent-fg transition hover:bg-accent/90 disabled:opacity-50"
+            type="button"
+            onClick={() => setView('picker')}
+            className="text-xs font-semibold text-brand"
           >
-            {busy ? 'Placing…' : 'Submit guess'}
+            {t.bet.changeRound}
           </button>
-        </form>
-      )}
-      {message && (
-        <p
-          className={`rounded-lg border p-3 text-sm ${
-            message.kind === 'ok'
-              ? 'border-green-200 bg-green-50 text-green-700'
-              : 'border-red-200 bg-red-50 text-red-700'
-          }`}
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <button type="button" onClick={() => setBoxOpen(true)} className={BTN_TYPE}>
+            {t.bet.box}
+          </button>
+          <button type="button" onClick={() => setQuickOpen(true)} className={BTN_TYPE}>
+            {t.bet.quick}
+          </button>
+          <button type="button" onClick={addReverse} className={BTN_TYPE}>
+            {t.bet.reverse}
+          </button>
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-gray-500">{t.bet.amount}</label>
+          <input
+            inputMode="numeric"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder={t.bet.amountPlaceholder}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none focus:border-brand"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500">
+          <span className="font-medium text-gray-400">{t.bet.legend}:</span>
+          <Legend color="bg-green-500" label={t.bet.legendOpen} />
+          <Legend color="bg-amber-500" label={t.bet.legendMid} />
+          <Legend color="bg-red-500" label={t.bet.legendFull} />
+        </div>
+
+        {round?.game_type === '3d' ? (
+          <div className="flex gap-2">
+            <input
+              inputMode="numeric"
+              value={threeD}
+              onChange={(e) => setThreeD(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
+              placeholder="000"
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-center text-lg font-bold tracking-[0.3em] text-gray-900 outline-none focus:border-brand"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (threeD.length === 3) {
+                  addNumbers([threeD]);
+                  setThreeD('');
+                }
+              }}
+              className="rounded-lg bg-brand px-5 text-sm font-bold text-brand-fg"
+            >
+              {t.box.confirm}
+            </button>
+          </div>
+        ) : (
+          <NumberGrid availability={availability} selection={selection} onToggle={toggleNumber} />
+        )}
+
+        {notice && (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">{notice}</p>
+        )}
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-md gap-2.5 border-t border-gray-200 bg-white px-4 py-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))]">
+        <button
+          type="button"
+          onClick={clearAll}
+          className="flex-1 rounded-lg border border-gray-300 py-3 text-sm font-bold text-gray-600"
         >
-          {message.text}
-        </p>
-      )}
-    </div>
+          {t.bet.clear}
+        </button>
+        <button
+          type="button"
+          onClick={goToCart}
+          disabled={count === 0}
+          className="flex-[1.4] rounded-lg bg-brand py-3 text-sm font-bold text-brand-fg disabled:opacity-50"
+        >
+          {t.bet.continue} ({count})
+        </button>
+      </div>
+
+      {boxOpen && <BoxModal onAdd={addNumbers} onClose={() => setBoxOpen(false)} />}
+      {quickOpen && <QuickPickModal onAdd={addNumbers} onClose={() => setQuickOpen(false)} />}
+    </>
   );
 }
 
 export default function GuessPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-gray-500">Loading…</p>}>
-      <GuessForm />
+    <Suspense fallback={<p className="py-12 text-center text-sm text-gray-400">{t.loading}</p>}>
+      <GuessFlow />
     </Suspense>
   );
 }

@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { t } from '@/lib/strings';
 
 // Bottom navigation modelled on the Facebook mobile app: icon-only tabs,
 // outline icons that switch to a filled variant on the active tab, plus a
-// short indicator bar along that tab's top edge.
+// short indicator bar along that tab's top edge. Hidden on the /guess betting
+// flow, which provides its own contextual action bar.
 
 const SIZE = 26;
 
@@ -38,7 +40,7 @@ function Filled({ children }: { children: ReactNode }) {
 const TABS: { href: string; label: string; outline: ReactNode; filled: ReactNode }[] = [
   {
     href: '/',
-    label: 'Home',
+    label: t.nav.home,
     outline: (
       <Outline>
         <path d="M3.6 11.7 12 4.5l8.4 7.2" />
@@ -53,7 +55,7 @@ const TABS: { href: string; label: string; outline: ReactNode; filled: ReactNode
   },
   {
     href: '/guess',
-    label: 'Guess',
+    label: t.nav.bet,
     outline: (
       <Outline>
         <circle cx="12" cy="12" r="8.4" />
@@ -75,7 +77,7 @@ const TABS: { href: string; label: string; outline: ReactNode; filled: ReactNode
   },
   {
     href: '/results',
-    label: 'Results',
+    label: t.nav.results,
     outline: (
       <Outline>
         <rect x="3.8" y="4.3" width="16.4" height="15.4" rx="2.6" />
@@ -97,7 +99,7 @@ const TABS: { href: string; label: string; outline: ReactNode; filled: ReactNode
   },
   {
     href: '/history',
-    label: 'History',
+    label: t.nav.history,
     outline: (
       <Outline>
         <circle cx="12" cy="12" r="8.4" />
@@ -120,7 +122,7 @@ const TABS: { href: string; label: string; outline: ReactNode; filled: ReactNode
   },
   {
     href: '/profile',
-    label: 'Profile',
+    label: t.nav.profile,
     outline: (
       <Outline>
         <circle cx="12" cy="8.6" r="3.7" />
@@ -138,24 +140,26 @@ const TABS: { href: string; label: string; outline: ReactNode; filled: ReactNode
 
 export function PlayerTabBar() {
   const pathname = usePathname();
+  if (pathname.startsWith('/guess')) return null;
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-md border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)]">
-      {TABS.map((t) => {
-        const active = pathname === t.href;
+      {TABS.map((tab) => {
+        const active = pathname === tab.href;
         return (
           <Link
-            key={t.href}
-            href={t.href}
-            aria-label={t.label}
+            key={tab.href}
+            href={tab.href}
+            aria-label={tab.label}
             aria-current={active ? 'page' : undefined}
             className={`relative flex flex-1 items-center justify-center py-3 transition-colors ${
-              active ? 'text-accent' : 'text-gray-500'
+              active ? 'text-brand' : 'text-gray-400'
             }`}
           >
             {active && (
-              <span className="absolute inset-x-4 top-0 h-[3px] rounded-b-full bg-accent" />
+              <span className="absolute inset-x-4 top-0 h-[3px] rounded-b-full bg-brand" />
             )}
-            {active ? t.filled : t.outline}
+            {active ? tab.filled : tab.outline}
           </Link>
         );
       })}

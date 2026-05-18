@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentProfile } from '@/lib/auth';
 import { mmDate } from '@/lib/datetime';
+import { t } from '@/lib/strings';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,15 +24,18 @@ export default async function HistoryPage() {
     .order('created_at', { ascending: false })
     .limit(50);
 
+  const list = guesses ?? [];
+  const statusText = t.status as Record<string, string>;
+
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="text-lg font-bold text-gray-900">My Guesses</h1>
-      {(guesses ?? []).length === 0 && (
-        <p className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
-          No guesses yet.
+      <h1 className="text-base font-bold text-brand">{t.history.title}</h1>
+      {list.length === 0 && (
+        <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
+          {t.history.empty}
         </p>
       )}
-      {(guesses ?? []).map((g) => (
+      {list.map((g) => (
         <div
           key={g.id}
           className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3.5"
@@ -39,17 +43,17 @@ export default async function HistoryPage() {
           <div>
             <p className="text-xl font-bold tracking-widest text-gray-900">{g.guess_number}</p>
             <p className="mt-0.5 text-xs text-gray-400">
-              {g.game_type.toUpperCase()} · {g.points_used.toLocaleString()} pts ·{' '}
+              {g.game_type.toUpperCase()} · {g.points_used.toLocaleString()} {t.kyat} ·{' '}
               {mmDate(g.created_at)}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
             <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 STATUS_STYLE[g.status] ?? 'bg-gray-100 text-gray-600'
               }`}
             >
-              {g.status}
+              {statusText[g.status] ?? g.status}
             </span>
             {g.status === 'won' && (
               <p className="text-sm font-semibold text-green-700">
