@@ -4,66 +4,134 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 
-const ICON = {
-  width: 22,
-  height: 22,
-  viewBox: '0 0 24 24',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.8,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-};
+// Bottom navigation modelled on the Facebook mobile app: icon-only tabs,
+// outline icons that switch to a filled variant on the active tab, plus a
+// short indicator bar along that tab's top edge.
 
-const TABS: { href: string; label: string; icon: ReactNode }[] = [
+const SIZE = 26;
+
+function Outline({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      width={SIZE}
+      height={SIZE}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {children}
+    </svg>
+  );
+}
+
+function Filled({ children }: { children: ReactNode }) {
+  return (
+    <svg width={SIZE} height={SIZE} viewBox="0 0 24 24" fill="currentColor">
+      {children}
+    </svg>
+  );
+}
+
+const TABS: { href: string; label: string; outline: ReactNode; filled: ReactNode }[] = [
   {
     href: '/',
     label: 'Home',
-    icon: (
-      <svg {...ICON}>
-        <path d="M3 10.8 12 4l9 6.8" />
-        <path d="M5.5 9.5V20h13V9.5" />
-      </svg>
+    outline: (
+      <Outline>
+        <path d="M3.6 11.7 12 4.5l8.4 7.2" />
+        <path d="M6 10.3V19.5h12V10.3" />
+      </Outline>
+    ),
+    filled: (
+      <Filled>
+        <path d="M12 3 3 11v8.5a1 1 0 0 0 1 1h4.6v-5.4a1 1 0 0 1 1-1h4.8a1 1 0 0 1 1 1v5.4H20a1 1 0 0 0 1-1V11L12 3Z" />
+      </Filled>
     ),
   },
   {
     href: '/guess',
     label: 'Guess',
-    icon: (
-      <svg {...ICON}>
-        <circle cx="12" cy="12" r="8.5" />
-        <path d="M12 8.5v7M8.5 12h7" />
-      </svg>
+    outline: (
+      <Outline>
+        <circle cx="12" cy="12" r="8.4" />
+        <path d="M12 8.3v7.4M8.3 12h7.4" />
+      </Outline>
+    ),
+    filled: (
+      <Filled>
+        <circle cx="12" cy="12" r="9" />
+        <path
+          d="M12 8.3v7.4M8.3 12h7.4"
+          stroke="#fff"
+          strokeWidth="2.3"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </Filled>
     ),
   },
   {
     href: '/results',
     label: 'Results',
-    icon: (
-      <svg {...ICON}>
-        <path d="M9 7h11M9 12h11M9 17h11" />
-        <path d="M4 6.6l1 1 1.6-2M4 12l1 1 1.6-2M4 17l1 1 1.6-2" />
-      </svg>
+    outline: (
+      <Outline>
+        <rect x="3.8" y="4.3" width="16.4" height="15.4" rx="2.6" />
+        <path d="M7.7 9h8.6M7.7 12.5h8.6M7.7 16h5.4" />
+      </Outline>
+    ),
+    filled: (
+      <Filled>
+        <rect x="3.8" y="4.3" width="16.4" height="15.4" rx="2.6" />
+        <path
+          d="M7.7 9h8.6M7.7 12.5h8.6M7.7 16h5.4"
+          stroke="#fff"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </Filled>
     ),
   },
   {
     href: '/history',
     label: 'History',
-    icon: (
-      <svg {...ICON}>
-        <circle cx="12" cy="12" r="8.5" />
-        <path d="M12 7.5V12l3 2" />
-      </svg>
+    outline: (
+      <Outline>
+        <circle cx="12" cy="12" r="8.4" />
+        <path d="M12 7.3V12l3.3 2" />
+      </Outline>
+    ),
+    filled: (
+      <Filled>
+        <circle cx="12" cy="12" r="9" />
+        <path
+          d="M12 7.3V12l3.3 2"
+          stroke="#fff"
+          strokeWidth="2.3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
+      </Filled>
     ),
   },
   {
     href: '/profile',
     label: 'Profile',
-    icon: (
-      <svg {...ICON}>
-        <circle cx="12" cy="9" r="3.6" />
-        <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
-      </svg>
+    outline: (
+      <Outline>
+        <circle cx="12" cy="8.6" r="3.7" />
+        <path d="M5.6 19.4a6.4 6.4 0 0 1 12.8 0" />
+      </Outline>
+    ),
+    filled: (
+      <Filled>
+        <circle cx="12" cy="8.2" r="4.1" />
+        <path d="M4.8 20c0-4 3.2-6.4 7.2-6.4s7.2 2.4 7.2 6.4Z" />
+      </Filled>
     ),
   },
 ];
@@ -78,13 +146,16 @@ export function PlayerTabBar() {
           <Link
             key={t.href}
             href={t.href}
+            aria-label={t.label}
             aria-current={active ? 'page' : undefined}
-            className={`flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-medium transition-colors ${
-              active ? 'text-accent' : 'text-gray-400'
+            className={`relative flex flex-1 items-center justify-center py-3 transition-colors ${
+              active ? 'text-accent' : 'text-gray-500'
             }`}
           >
-            {t.icon}
-            {t.label}
+            {active && (
+              <span className="absolute inset-x-4 top-0 h-[3px] rounded-b-full bg-accent" />
+            )}
+            {active ? t.filled : t.outline}
           </Link>
         );
       })}
