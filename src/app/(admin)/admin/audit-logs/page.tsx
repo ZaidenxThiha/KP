@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { DataTable } from '@/components/DataTable';
+import { mmDateTime } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,7 @@ export default async function AdminAuditLogsPage() {
         rowKey={(l) => l.id}
         empty="No audit entries yet."
         columns={[
-          { header: 'When', cell: (l) => new Date(l.created_at).toLocaleString() },
+          { header: 'When', cell: (l) => mmDateTime(l.created_at) },
           { header: 'Actor', cell: (l) => <span className="capitalize">{l.actor_role ?? '—'}</span> },
           {
             header: 'Action',

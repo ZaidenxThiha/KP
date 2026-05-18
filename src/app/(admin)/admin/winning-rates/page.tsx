@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { WinningRateForm } from '@/components/admin/WinningRateForm';
 import { DataTable } from '@/components/DataTable';
+import { mmDateTime } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,7 @@ export default async function AdminWinningRatesPage() {
           {
             header: 'Changed',
             align: 'right',
-            cell: (r) => new Date(r.created_at).toLocaleString(),
+            cell: (r) => mmDateTime(r.created_at),
           },
         ]}
       />

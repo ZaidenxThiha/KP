@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentProfile } from '@/lib/auth';
 import { DataTable } from '@/components/DataTable';
+import { mmDateTime } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,7 +41,7 @@ export default async function OfficerDistributionPage() {
         rowKey={(r) => r.id}
         empty="No distributions yet."
         columns={[
-          { header: 'When', cell: (r) => new Date(r.created_at).toLocaleString() },
+          { header: 'When', cell: (r) => mmDateTime(r.created_at) },
           { header: 'Amount', align: 'right', cell: (r) => r.amount.toLocaleString() },
           { header: 'Note', cell: (r) => <span className="text-gray-500">{r.note ?? '—'}</span> },
         ]}

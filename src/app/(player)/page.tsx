@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { mmTime } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,10 +37,7 @@ export default async function PlayerHome() {
             <div className="text-right">
               <p className="text-xs text-gray-400">closes</p>
               <p className="text-sm font-medium text-gray-900">
-                {new Date(r.close_time).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {mmTime(r.close_time)}
               </p>
             </div>
             <svg

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { DataTable } from '@/components/DataTable';
+import { mmDateTime } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +49,7 @@ export default async function AdminApiResultsPage() {
           rowKey={(l) => l.id}
           empty="No sync runs yet."
           columns={[
-            { header: 'When', cell: (l) => new Date(l.created_at).toLocaleString() },
+            { header: 'When', cell: (l) => mmDateTime(l.created_at) },
             { header: 'Type', cell: (l) => l.sync_type },
             {
               header: 'Result',

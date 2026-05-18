@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentProfile } from '@/lib/auth';
+import { mmDate } from '@/lib/datetime';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,7 @@ export default async function HistoryPage() {
             <p className="text-xl font-bold tracking-widest text-gray-900">{g.guess_number}</p>
             <p className="mt-0.5 text-xs text-gray-400">
               {g.game_type.toUpperCase()} · {g.points_used.toLocaleString()} pts ·{' '}
-              {new Date(g.created_at).toLocaleDateString()}
+              {mmDate(g.created_at)}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
