@@ -99,21 +99,21 @@ export function LiveResults() {
         <p className="text-8xl font-black leading-none tracking-tight text-brand">
           {live?.twod ?? '--'}
         </p>
-        <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+        <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-gray-400">
           <RefreshIcon />
           {t.home.updated} {data?.server_time ?? '—'}
         </p>
       </div>
 
       {!data ? (
-        <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
+        <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-base text-gray-400">
           {failed ? t.errors.generic : t.loading}
         </p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200">
-          <table className="w-full text-sm">
+          <table className="w-full text-base">
             <thead>
-              <tr className="bg-brand text-xs text-white">
+              <tr className="bg-brand text-sm text-white">
                 <th className="px-3 py-2.5 text-left font-semibold">Time</th>
                 <th className="px-2 py-2.5 text-right font-semibold">Set</th>
                 <th className="px-2 py-2.5 text-right font-semibold">Value</th>
@@ -132,14 +132,14 @@ export function LiveResults() {
                   <td className="px-2 py-3 text-right font-medium text-gray-500">
                     <Tail value={d.value} />
                   </td>
-                  <td className="px-3 py-3 text-right text-base font-bold text-brand">
+                  <td className="px-3 py-3 text-right text-lg font-bold text-brand">
                     {d.twod || '--'}
                   </td>
                 </tr>
               ))}
               {draws.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-sm text-gray-400">
+                  <td colSpan={4} className="px-3 py-6 text-center text-base text-gray-400">
                     {t.home.noResults}
                   </td>
                 </tr>

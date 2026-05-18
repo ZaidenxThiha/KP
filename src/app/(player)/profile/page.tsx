@@ -21,20 +21,20 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-base font-bold text-brand">{t.profile.title}</h1>
+      <h1 className="text-lg font-bold text-brand">{t.profile.title}</h1>
       <dl className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
         {rows.map((r) => (
           <div key={r.label} className="flex justify-between px-4 py-3">
-            <dt className="text-sm text-gray-500">{r.label}</dt>
-            <dd className="text-sm font-medium text-gray-900">{r.value}</dd>
+            <dt className="text-base text-gray-500">{r.label}</dt>
+            <dd className="text-base font-medium text-gray-900">{r.value}</dd>
           </div>
         ))}
       </dl>
       <LogoutButton
         label={t.profile.logout}
-        className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+        className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-center text-base font-medium text-gray-700 transition hover:bg-gray-50"
       />
-      <p className="text-center text-xs leading-relaxed text-gray-400">{t.disclaimer}</p>
+      <p className="text-center text-sm leading-relaxed text-gray-400">{t.disclaimer}</p>
     </div>
   );
 }

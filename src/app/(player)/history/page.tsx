@@ -29,9 +29,9 @@ export default async function HistoryPage() {
 
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="text-base font-bold text-brand">{t.history.title}</h1>
+      <h1 className="text-lg font-bold text-brand">{t.history.title}</h1>
       {list.length === 0 && (
-        <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
+        <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-base text-gray-400">
           {t.history.empty}
         </p>
       )}
@@ -41,22 +41,22 @@ export default async function HistoryPage() {
           className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3.5"
         >
           <div>
-            <p className="text-xl font-bold tracking-widest text-gray-900">{g.guess_number}</p>
-            <p className="mt-0.5 text-xs text-gray-400">
+            <p className="text-2xl font-bold tracking-widest text-gray-900">{g.guess_number}</p>
+            <p className="mt-0.5 text-sm text-gray-400">
               {g.game_type.toUpperCase()} · {g.points_used.toLocaleString()} {t.kyat} ·{' '}
               {mmDate(g.created_at)}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
             <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${
                 STATUS_STYLE[g.status] ?? 'bg-gray-100 text-gray-600'
               }`}
             >
               {statusText[g.status] ?? g.status}
             </span>
             {g.status === 'won' && (
-              <p className="text-sm font-semibold text-green-700">
+              <p className="text-base font-semibold text-green-700">
                 +{g.possible_win_amount.toLocaleString()}
               </p>
             )}

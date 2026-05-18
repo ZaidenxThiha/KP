@@ -62,3 +62,14 @@ export function mmToday(): string {
     day: '2-digit',
   });
 }
+
+// "16:30" -> "4:30 PM". Round names are stored as 24-hour HH:MM; players see
+// 12-hour time. A name that isn't an HH:MM time is returned unchanged.
+export function roundLabel(name: string): string {
+  const m = /^(\d{1,2}):(\d{2})/.exec(name);
+  if (!m) return name;
+  const h = Number(m[1]);
+  const period = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m[2]} ${period}`;
+}

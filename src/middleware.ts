@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
-const PLAYER_PATHS = ['/', '/guess', '/results', '/history', '/profile'];
+const PLAYER_PATHS = ['/', '/guess', '/results', '/history', '/profile', '/help'];
 
 export async function middleware(request: NextRequest) {
   const { response, supabase, user } = await updateSession(request);

@@ -1,8 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentProfile } from '@/lib/auth';
-import { createClient } from '@/lib/supabase/server';
 import { PlayerTabBar } from '@/components/PlayerTabBar';
-import { mmTime } from '@/lib/datetime';
 import { t } from '@/lib/strings';
 
 export const dynamic = 'force-dynamic';
@@ -10,8 +8,8 @@ export const dynamic = 'force-dynamic';
 function WalletIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="26"
+      height="26"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -26,68 +24,28 @@ function WalletIcon() {
   );
 }
 
-function ClockIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="8.6" />
-      <path d="M12 7.4V12l3.1 1.9" />
-    </svg>
-  );
-}
-
 export default async function PlayerLayout({ children }: { children: React.ReactNode }) {
   const profile = await getCurrentProfile();
   if (!profile) redirect('/login');
   if (profile.role !== 'player') redirect(profile.role === 'admin' ? '/admin' : '/officer');
 
-  // Soonest still-upcoming close time across all open rounds — shown in the
-  // header. Not limited to today, so it keeps pointing at the next draw once
-  // today's rounds have all closed.
-  const { data: rounds } = await createClient()
-    .from('rounds')
-    .select('close_time')
-    .eq('status', 'open')
-    .gt('close_time', new Date().toISOString())
-    .order('close_time', { ascending: true })
-    .limit(1);
-
-  const nextClose = rounds?.[0]?.close_time as string | undefined;
-
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-gray-50">
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5">
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-20 flex items-center border-b border-gray-200 bg-white px-4 py-3">
+        <div className="flex items-center gap-2.5">
           <span className="text-brand">
             <WalletIcon />
           </span>
           <div className="leading-tight">
-            <p className="text-[11px] text-gray-400">{t.balance}</p>
-            <p className="text-sm font-bold text-green-600">
+            <p className="text-xs text-gray-400">{t.balance}</p>
+            <p className="text-base font-bold text-green-600">
               {profile.points_balance.toLocaleString()}
-              <span className="ml-0.5 text-xs font-medium">{t.kyat}</span>
+              <span className="ml-0.5 text-sm font-medium">{t.kyat}</span>
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="text-right leading-tight">
-            <p className="text-[11px] text-gray-400">{t.closeTime}</p>
-            <p className="text-sm font-bold text-green-600">{nextClose ? mmTime(nextClose) : '—'}</p>
-          </div>
-          <span className="text-brand">
-            <ClockIcon />
-          </span>
-        </div>
       </header>
-      <main className="flex-1 px-4 py-4 pb-28">{children}</main>
+      <main className="flex-1 px-4 py-4 pb-32">{children}</main>
       <PlayerTabBar />
     </div>
   );

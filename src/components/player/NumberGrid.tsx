@@ -48,7 +48,7 @@ export function NumberGrid({
                   : 'border-gray-200 bg-gray-50 text-gray-700 active:scale-95'
             }`}
           >
-            <span className="text-sm font-bold">{n}</span>
+            <span className="text-base font-bold">{n}</span>
             <span
               className={`h-1 w-full overflow-hidden rounded-full ${
                 selected ? 'bg-white/30' : 'bg-gray-200'

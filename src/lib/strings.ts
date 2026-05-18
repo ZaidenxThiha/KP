@@ -7,6 +7,7 @@ export const t = {
   balance: 'လက်ကျန်ငွေ',
   closeTime: 'ထီပိတ်ချိန်',
   loading: 'ခဏစောင့်ပါ…',
+  back: 'နောက်သို့',
 
   nav: {
     history: 'မှတ်တမ်း',

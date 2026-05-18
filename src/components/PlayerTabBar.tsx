@@ -5,22 +5,19 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { t } from '@/lib/strings';
 
-// Bottom navigation modelled on the Facebook mobile app: icon-only tabs,
-// outline icons that switch to a filled variant on the active tab, plus a
-// short indicator bar along that tab's top edge. Hidden on the /guess betting
-// flow, which provides its own contextual action bar.
+// Bottom navigation: five labelled tabs (icon + Burmese label). The active tab
+// turns teal with a short indicator bar on its top edge. Hidden on the /guess
+// betting flow, which carries its own header and action bar.
 
-const SIZE = 26;
-
-function Outline({ children }: { children: ReactNode }) {
+function Icon({ children, strokeWidth = 1.8 }: { children: ReactNode; strokeWidth?: number }) {
   return (
     <svg
-      width={SIZE}
-      height={SIZE}
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -29,111 +26,55 @@ function Outline({ children }: { children: ReactNode }) {
   );
 }
 
-function Filled({ children }: { children: ReactNode }) {
-  return (
-    <svg width={SIZE} height={SIZE} viewBox="0 0 24 24" fill="currentColor">
-      {children}
-    </svg>
-  );
-}
-
-const TABS: { href: string; label: string; outline: ReactNode; filled: ReactNode }[] = [
+const TABS: { href: string; label: string; icon: ReactNode }[] = [
   {
     href: '/',
     label: t.nav.home,
-    outline: (
-      <Outline>
+    icon: (
+      <Icon>
         <path d="M3.6 11.7 12 4.5l8.4 7.2" />
         <path d="M6 10.3V19.5h12V10.3" />
-      </Outline>
-    ),
-    filled: (
-      <Filled>
-        <path d="M12 3 3 11v8.5a1 1 0 0 0 1 1h4.6v-5.4a1 1 0 0 1 1-1h4.8a1 1 0 0 1 1 1v5.4H20a1 1 0 0 0 1-1V11L12 3Z" />
-      </Filled>
-    ),
-  },
-  {
-    href: '/guess',
-    label: t.nav.bet,
-    outline: (
-      <Outline>
-        <circle cx="12" cy="12" r="8.4" />
-        <path d="M12 8.3v7.4M8.3 12h7.4" />
-      </Outline>
-    ),
-    filled: (
-      <Filled>
-        <circle cx="12" cy="12" r="9" />
-        <path
-          d="M12 8.3v7.4M8.3 12h7.4"
-          stroke="#fff"
-          strokeWidth="2.3"
-          strokeLinecap="round"
-          fill="none"
-        />
-      </Filled>
-    ),
-  },
-  {
-    href: '/results',
-    label: t.nav.results,
-    outline: (
-      <Outline>
-        <rect x="3.8" y="4.3" width="16.4" height="15.4" rx="2.6" />
-        <path d="M7.7 9h8.6M7.7 12.5h8.6M7.7 16h5.4" />
-      </Outline>
-    ),
-    filled: (
-      <Filled>
-        <rect x="3.8" y="4.3" width="16.4" height="15.4" rx="2.6" />
-        <path
-          d="M7.7 9h8.6M7.7 12.5h8.6M7.7 16h5.4"
-          stroke="#fff"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-          fill="none"
-        />
-      </Filled>
+      </Icon>
     ),
   },
   {
     href: '/history',
     label: t.nav.history,
-    outline: (
-      <Outline>
-        <circle cx="12" cy="12" r="8.4" />
-        <path d="M12 7.3V12l3.3 2" />
-      </Outline>
+    icon: (
+      <Icon strokeWidth={1.7}>
+        <rect x="5" y="3.5" width="14" height="17" rx="2.4" />
+        <path d="M9 9h6M9 12.5h6M9 16h4" />
+      </Icon>
     ),
-    filled: (
-      <Filled>
-        <circle cx="12" cy="12" r="9" />
-        <path
-          d="M12 7.3V12l3.3 2"
-          stroke="#fff"
-          strokeWidth="2.3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
-      </Filled>
+  },
+  {
+    href: '/results',
+    label: t.nav.results,
+    icon: (
+      <Icon strokeWidth={2}>
+        <path d="M5 20V11M12 20V5M19 20v-6" />
+      </Icon>
     ),
   },
   {
     href: '/profile',
     label: t.nav.profile,
-    outline: (
-      <Outline>
-        <circle cx="12" cy="8.6" r="3.7" />
-        <path d="M5.6 19.4a6.4 6.4 0 0 1 12.8 0" />
-      </Outline>
+    icon: (
+      <Icon strokeWidth={1.7}>
+        <circle cx="12" cy="9" r="3.5" />
+        <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
+      </Icon>
     ),
-    filled: (
-      <Filled>
-        <circle cx="12" cy="8.2" r="4.1" />
-        <path d="M4.8 20c0-4 3.2-6.4 7.2-6.4s7.2 2.4 7.2 6.4Z" />
-      </Filled>
+  },
+  {
+    href: '/help',
+    label: t.nav.help,
+    icon: (
+      <Icon>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.6 9.3a2.5 2.5 0 1 1 3.6 2.6c-.8.5-1.2 1-1.2 2" />
+        <path d="M12 16.2h.01" />
+      </Icon>
     ),
   },
 ];
@@ -152,14 +93,15 @@ export function PlayerTabBar() {
             href={tab.href}
             aria-label={tab.label}
             aria-current={active ? 'page' : undefined}
-            className={`relative flex flex-1 items-center justify-center py-3 transition-colors ${
+            className={`relative flex flex-1 flex-col items-center gap-1 py-2 transition-colors ${
               active ? 'text-brand' : 'text-gray-400'
             }`}
           >
             {active && (
-              <span className="absolute inset-x-4 top-0 h-[3px] rounded-b-full bg-brand" />
+              <span className="absolute inset-x-5 top-0 h-[3px] rounded-b-full bg-brand" />
             )}
-            {active ? tab.filled : tab.outline}
+            {tab.icon}
+            <span className={`text-xs ${active ? 'font-bold' : 'font-medium'}`}>{tab.label}</span>
           </Link>
         );
       })}

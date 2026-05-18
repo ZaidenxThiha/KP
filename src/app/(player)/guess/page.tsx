@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { errorText, t } from '@/lib/strings';
-import { mmDate, mmTime } from '@/lib/datetime';
+import { mmDate, mmTime, roundLabel } from '@/lib/datetime';
 import { RoundPicker } from '@/components/player/RoundPicker';
 import { NumberGrid } from '@/components/player/NumberGrid';
 import { BetCart } from '@/components/player/BetCart';
@@ -20,7 +20,7 @@ type Avail = Record<string, { used: number; max: number | null }>;
 type BatchResult = { number: string; ok: boolean };
 
 const BTN_TYPE =
-  'rounded-lg border border-brand bg-white py-2 text-xs font-bold text-brand transition active:bg-brand active:text-brand-fg';
+  'rounded-lg border border-brand bg-white py-2 text-sm font-bold text-brand transition active:bg-brand active:text-brand-fg';
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (
@@ -28,6 +28,23 @@ function Legend({ color, label }: { color: string; label: string }) {
       <span className={`h-2 w-2 rounded-full ${color}`} />
       {label}
     </span>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
   );
 }
 
@@ -67,14 +84,13 @@ function GuessFlow() {
         const preset = params.get('round');
         if (preset && open.some((r) => r.id === preset)) {
           setRoundId(preset);
-          setView('grid');
-        } else if (open.length === 1) {
+        } else if (open.length > 0) {
           setRoundId(open[0].id);
-          setView('grid');
-        } else {
-          setPickerId(open[0]?.id ?? '');
-          setView('picker');
         }
+        // Drop straight into the number grid with a round preselected — the
+        // player taps "change round" to pick another. Only show the picker
+        // first when there is no open round at all.
+        setView(open.length > 0 ? 'grid' : 'picker');
       })
       .catch(() => {
         setNotice(t.errors.loadRounds);
@@ -212,7 +228,7 @@ function GuessFlow() {
   }
 
   if (view === 'loading') {
-    return <p className="py-12 text-center text-sm text-gray-400">{t.loading}</p>;
+    return <p className="py-12 text-center text-base text-gray-400">{t.loading}</p>;
   }
 
   if (view === 'picker') {
@@ -222,7 +238,10 @@ function GuessFlow() {
         selectedId={pickerId}
         onSelect={setPickerId}
         onConfirm={confirmPicker}
-        onClose={() => router.push('/')}
+        onClose={() => {
+          if (roundId) setView('grid');
+          else router.push('/');
+        }}
       />
     );
   }
@@ -256,19 +275,38 @@ function GuessFlow() {
   return (
     <>
       <div className="flex flex-col gap-3 pb-24">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            aria-label={t.back}
+            className="-ml-1.5 rounded-lg p-1.5 text-gray-600 active:bg-gray-100"
+          >
+            <BackIcon />
+          </button>
+          <h1 className="text-lg font-bold text-gray-900">{t.nav.bet}</h1>
+          {round && (
+            <span className="ml-auto text-sm font-bold text-brand">
+              {t.closeTime} {mmTime(round.close_time)}
+            </span>
+          )}
+        </div>
         <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2">
-          <p className="text-sm">
-            <span className="font-bold uppercase text-brand">{round?.round_name ?? '—'}</span>
+          <p className="text-base">
+            <span className="font-bold uppercase text-brand">
+              {round ? roundLabel(round.round_name) : '—'}
+            </span>
             {round && (
-              <span className="ml-2 text-xs text-gray-400">
-                {mmDate(round.close_time)} · {t.closeTime} {mmTime(round.close_time)}
-              </span>
+              <span className="ml-2 text-sm text-gray-400">{mmDate(round.close_time)}</span>
             )}
           </p>
           <button
             type="button"
-            onClick={() => setView('picker')}
-            className="text-xs font-semibold text-brand"
+            onClick={() => {
+              setPickerId(roundId);
+              setView('picker');
+            }}
+            className="text-sm font-semibold text-brand"
           >
             {t.bet.changeRound}
           </button>
@@ -287,18 +325,17 @@ function GuessFlow() {
         </div>
 
         <div>
-          <label className="text-xs font-medium text-gray-500">{t.bet.amount}</label>
+          <label className="text-sm font-medium text-gray-500">{t.bet.amount}</label>
           <input
             inputMode="numeric"
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
             placeholder={t.bet.amountPlaceholder}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none focus:border-brand"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base font-semibold text-gray-900 outline-none focus:border-brand"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500">
-          <span className="font-medium text-gray-400">{t.bet.legend}:</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
           <Legend color="bg-green-500" label={t.bet.legendOpen} />
           <Legend color="bg-amber-500" label={t.bet.legendMid} />
           <Legend color="bg-red-500" label={t.bet.legendFull} />
@@ -311,7 +348,7 @@ function GuessFlow() {
               value={threeD}
               onChange={(e) => setThreeD(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
               placeholder="000"
-              className="flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-center text-lg font-bold tracking-[0.3em] text-gray-900 outline-none focus:border-brand"
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-center text-xl font-bold tracking-[0.3em] text-gray-900 outline-none focus:border-brand"
             />
             <button
               type="button"
@@ -321,7 +358,7 @@ function GuessFlow() {
                   setThreeD('');
                 }
               }}
-              className="rounded-lg bg-brand px-5 text-sm font-bold text-brand-fg"
+              className="rounded-lg bg-brand px-5 text-base font-bold text-brand-fg"
             >
               {t.box.confirm}
             </button>
@@ -331,7 +368,7 @@ function GuessFlow() {
         )}
 
         {notice && (
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">{notice}</p>
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-base text-amber-700">{notice}</p>
         )}
       </div>
 
@@ -339,7 +376,7 @@ function GuessFlow() {
         <button
           type="button"
           onClick={clearAll}
-          className="flex-1 rounded-lg border border-gray-300 py-3 text-sm font-bold text-gray-600"
+          className="flex-1 rounded-lg border border-gray-300 py-3 text-base font-bold text-gray-600"
         >
           {t.bet.clear}
         </button>
@@ -347,7 +384,7 @@ function GuessFlow() {
           type="button"
           onClick={goToCart}
           disabled={count === 0}
-          className="flex-[1.4] rounded-lg bg-brand py-3 text-sm font-bold text-brand-fg disabled:opacity-50"
+          className="flex-[1.4] rounded-lg bg-brand py-3 text-base font-bold text-brand-fg disabled:opacity-50"
         >
           {t.bet.continue} ({count})
         </button>
@@ -361,7 +398,7 @@ function GuessFlow() {
 
 export default function GuessPage() {
   return (
-    <Suspense fallback={<p className="py-12 text-center text-sm text-gray-400">{t.loading}</p>}>
+    <Suspense fallback={<p className="py-12 text-center text-base text-gray-400">{t.loading}</p>}>
       <GuessFlow />
     </Suspense>
   );
