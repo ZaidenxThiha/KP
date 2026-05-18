@@ -34,6 +34,8 @@ const BTN_PRIMARY =
 const BTN_GHOST =
   'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50';
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 function Stat({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
   return (
     <div
@@ -54,6 +56,8 @@ export default function AdminRoundsPage() {
   const [gameType, setGameType] = useState('2d');
   const [roundName, setRoundName] = useState('evening');
   const [closeAt, setCloseAt] = useState('');
+  const [dailyDate, setDailyDate] = useState(today);
+  const [dailyBusy, setDailyBusy] = useState(false);
   const [results, setResults] = useState<Record<string, string>>({});
   const [note, setNote] = useState('');
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -68,6 +72,27 @@ export default function AdminRoundsPage() {
     load();
   }, [load]);
 
+  async function createDailyRounds() {
+    setDailyBusy(true);
+    const res = await fetch('/api/v1/admin/rounds/create-daily', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ round_date: dailyDate }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setNote(
+        data.created > 0
+          ? `Created ${data.created} round${data.created === 1 ? '' : 's'} for ${data.round_date}.`
+          : `No rounds created for ${data.round_date} — they already exist, or it falls on a weekend.`,
+      );
+      load();
+    } else {
+      setNote(data.error?.message ?? 'Failed.');
+    }
+    setDailyBusy(false);
+  }
+
   async function createRound() {
     if (!closeAt) return setNote('Pick a close time.');
     const res = await fetch('/api/v1/admin/rounds/create', {
@@ -76,7 +101,7 @@ export default function AdminRoundsPage() {
       body: JSON.stringify({
         game_type: gameType,
         round_name: roundName,
-        round_date: new Date().toISOString().slice(0, 10),
+        round_date: today(),
         close_time: new Date(closeAt).toISOString(),
       }),
     });
@@ -124,7 +149,32 @@ export default function AdminRoundsPage() {
       <h1 className="text-lg font-semibold text-gray-900">Rounds</h1>
 
       <section className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Create a round</h2>
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Daily rounds</h2>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Creates the four standard 2D rounds — 11:00, 12:01, 15:00 and 16:30 — for the
+            chosen day in one click. Safe to re-run: existing rounds are skipped and
+            weekends are ignored.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
+            Date
+            <input
+              type="date"
+              value={dailyDate}
+              onChange={(e) => setDailyDate(e.target.value)}
+              className={`${INPUT} w-full`}
+            />
+          </label>
+          <button onClick={createDailyRounds} disabled={dailyBusy} className={BTN_PRIMARY}>
+            {dailyBusy ? 'Creating…' : 'Create 4 daily rounds'}
+          </button>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-gray-900">Create a single round</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="flex flex-col gap-1 text-xs font-medium text-gray-500">
             Game
